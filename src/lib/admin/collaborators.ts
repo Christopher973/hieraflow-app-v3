@@ -248,9 +248,9 @@ const mapRelatedPosition = async (position: {
   name: position.name,
   type: position.type,
   sectorId: position.sectorId,
-  sectorName: position.sector.name,
-  departmentId: position.sector.departmentId,
-  departmentName: position.sector.department.name,
+  sectorName: position.sector?.name ?? null,
+  departmentId: position.sector?.departmentId ?? null,
+  departmentName: position.sector?.department?.name ?? null,
   member:
     position.memberAssignments.length > 0
       ? await mapLightMember(position.memberAssignments[0].member)
@@ -309,9 +309,9 @@ const mapCollaborator = async (member: {
   positionId: member.positionId,
   positionName: member.position?.name ?? null,
   sectorId: member.position?.sectorId ?? null,
-  sectorName: member.position?.sector.name ?? null,
-  departmentId: member.position?.sector.departmentId ?? null,
-  departmentName: member.position?.sector.department.name ?? null,
+  sectorName: member.position?.sector?.name ?? null,
+  departmentId: member.position?.sector?.departmentId ?? null,
+  departmentName: member.position?.sector?.department?.name ?? null,
   createdAt: member.createdAt.toISOString(),
   updatedAt: member.updatedAt.toISOString(),
 });
@@ -708,9 +708,9 @@ export async function getCollaboratorDetailById(
       type: assignment.position.type,
       jobDetails: normalizeJobDetails(assignment.position.jobDetails),
       sectorId: assignment.position.sectorId,
-      sectorName: assignment.position.sector.name,
-      departmentId: assignment.position.sector.departmentId,
-      departmentName: assignment.position.sector.department.name,
+      sectorName: assignment.position.sector?.name ?? null,
+      departmentId: assignment.position.sector?.departmentId ?? null,
+      departmentName: assignment.position.sector?.department?.name ?? null,
       isPrimary: assignment.isPrimary,
     })),
     position: member.position
@@ -720,9 +720,9 @@ export async function getCollaboratorDetailById(
           type: member.position.type,
           jobDetails: normalizeJobDetails(member.position.jobDetails),
           sectorId: member.position.sectorId,
-          sectorName: member.position.sector.name,
-          departmentId: member.position.sector.departmentId,
-          departmentName: member.position.sector.department.name,
+          sectorName: member.position.sector?.name ?? null,
+          departmentId: member.position.sector?.departmentId ?? null,
+          departmentName: member.position.sector?.department?.name ?? null,
           parentPosition,
           childPositions,
         }

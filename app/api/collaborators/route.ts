@@ -59,7 +59,14 @@ export async function GET(request: NextRequest) {
         pagination: result.pagination,
       },
     );
-  } catch {
+  } catch (error) {
+    // Log the actual error to help debugging on server
+    try {
+      console.error(
+        "[GET /api/collaborators] Error while listing collaborators:",
+        error,
+      );
+    } catch {}
     return internalError("Impossible de récupérer les collaborateurs.");
   }
 }
