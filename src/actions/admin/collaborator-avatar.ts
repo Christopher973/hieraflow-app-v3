@@ -165,6 +165,7 @@ export async function uploadCollaboratorAvatarAction(
       console.error("[Avatar Upload] uploadFile error:", error);
     } catch (e) {
       // ignore logging errors
+      console.error("[Avatar Upload] Failed to log error:", e);
     }
     return buildApiPayload<CollaboratorAvatarPayload>({
       errors: [

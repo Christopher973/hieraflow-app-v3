@@ -360,8 +360,12 @@ const validateAssignments = async (
 
   const positions = (await prismaClient.position.findMany({
     where: { id: { in: payload.positionIds } },
-    select: { id: true, sectorId: true },
-  })) as Array<{ id: number; sectorId: number }>;
+    select: { id: true, sectorId: true, departmentId: true },
+  })) as Array<{
+    id: number;
+    sectorId: number | null;
+    departmentId: number | null;
+  }>;
 
   if (positions.length !== payload.positionIds.length) {
     throwPrismaLikeError("P2003", "positionId");
@@ -380,7 +384,41 @@ const validateAssignments = async (
   const usedSectors = new Set<number>();
   const byId = new Map<number, { id: number; sectorId: number }>();
 
-  for (const position of positions) {
+  // Normalize positions: resolve a concrete sectorId for positions that
+  // are department-scoped (sectorId === null) by looking up a fallback
+  // sector in the related department. This ensures MemberPositionAssignment
+  // always receives a non-null sectorId (DB constraint).
+  const normalizedPositions = await Promise.all(
+    positions.map(async (position) => {
+      // If sectorId is present, use it as-is (narrow to number)
+      if (position.sectorId !== null && position.sectorId !== undefined) {
+        return { id: position.id, sectorId: position.sectorId as number };
+      }
+
+      // Otherwise, try to resolve a fallback sector for the department
+      const deptId = position.departmentId;
+
+      if (deptId == null) {
+        // Cannot resolve a sector for this position
+        throwPrismaLikeError("P2003", "positionId");
+      }
+
+      const fallback = await prisma.sector.findFirst({
+        where: { departmentId: deptId as number },
+        select: { id: true },
+        orderBy: { id: "asc" },
+      });
+
+      if (!fallback) {
+        throwPrismaLikeError("P2003", "positionId");
+      }
+
+      const fallbackId = fallback!.id;
+      return { id: position.id, sectorId: fallbackId };
+    }),
+  );
+
+  for (const position of normalizedPositions) {
     byId.set(position.id, position);
 
     if (usedSectors.has(position.sectorId)) {
