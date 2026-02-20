@@ -34,6 +34,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/hieraflow-app:latest
-            ghcr.io/${{ github.repository_owner }}/hieraflow-app:${{ github.sha }}
+            ghcr.io/${{ toLower(github.repository_owner) }}/hieraflow-app:latest
+            ghcr.io/${{ toLower(github.repository_owner) }}/hieraflow-app:${{ github.sha }}
           platforms: linux/amd64
