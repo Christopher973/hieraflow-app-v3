@@ -51,6 +51,7 @@ RUN groupadd -r app && useradd -r -g app app
 COPY --from=builder /app/.next/standalone/ ./
 COPY --from=builder /app/.next/static/ ./.next/static/
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 # Copy production node_modules built in the builder stage
 COPY --from=builder /app/node_modules ./node_modules
