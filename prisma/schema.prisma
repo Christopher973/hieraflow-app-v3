@@ -1,0 +1,308 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id            String    @id
+  name          String    @db.Text
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  role       String?   @db.Text
+  banned     Boolean?  @default(false)
+  banReason  String?   @db.Text
+  banExpires DateTime?
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?  @db.Text
+  userAgent String?  @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String? @db.Text
+
+  @@unique([token])
+  @@index([userId(length: 191)])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @db.Text
+  providerId            String    @db.Text
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId(length: 191)])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String   @db.Text
+  value      String   @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier(length: 191)])
+  @@map("verification")
+}
+
+// ─── ENUMS ──────────────────────────────────────────────────────────────────────
+
+/// Genre du membre
+enum Gender {
+  HOMME
+  FEMME
+  AUTRE
+}
+
+/// Statut du membre dans l'entreprise
+enum MemberStatus {
+  ACTIF
+  INACTIF
+  SUSPENDU
+}
+
+/// Type de poste dans la hiérarchie
+/// Permet de déduire les `tags` OrgChart (ex: ASSISTANT → ["assistant"])
+enum PositionType {
+  DIRECTEUR
+  SOUS_DIRECTEUR
+  CHEF_SERVICE
+  RESPONSABLE
+  COLLABORATEUR
+  ASSISTANT
+}
+
+/// Portée de rattachement du poste
+enum PositionScope {
+  SECTOR
+  DEPARTMENT
+}
+
+// ─── LOCATION ───────────────────────────────────────────────────────────────────
+
+/// Localisation physique d'un membre (bâtiment, site, ville).
+model Location {
+  id Int @id @default(autoincrement())
+
+  name String @unique
+
+  members Member[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@map("location")
+}
+
+// ─── DEPARTMENT ─────────────────────────────────────────────────────────────────
+
+/// Un département est la division organisationnelle de plus haut niveau.
+/// Exemples : IT, Marketing, Finance, RH.
+model Department {
+  id Int @id @default(autoincrement())
+
+  name String @unique /// Nom unique au niveau global
+
+  sectors   Sector[]
+  positions Position[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@map("department")
+}
+
+// ─── SECTOR ─────────────────────────────────────────────────────────────────────
+
+/// Un secteur est une subdivision d'un département.
+/// Exemples : Cybersécurité, Infrastructure, Développement (au sein du dépt. IT).
+model Sector {
+  id Int @id @default(autoincrement())
+
+  name String /// Unique au sein du département (voir @@unique ci-dessous)
+
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId Int
+
+  positions                 Position[]
+  memberPositionAssignments MemberPositionAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([departmentId, name]) /// Unicité du nom de secteur par département
+  @@index([departmentId])
+  @@index([name])
+  @@map("sector")
+}
+
+// ─── POSITION (Nœud hiérarchique) ───────────────────────────────────────────────
+
+/// Un poste représente un nœud dans l'organigramme hiérarchique.
+/// La self-relation parentPosition/childPositions modélise l'arbre :
+///   Directeur Dept → Délégué Secteur → Chef Service → Collaborateur
+///
+/// Mapping Balkan OrgChart :
+///   id   → position.id
+///   pid  → position.parentPositionId
+///   name → member.firstname + " " + member.lastname (ou "Poste vacant")
+///   title → position.name
+///   img  → member.avatarUrl
+///   tags → dérivé de position.type (ASSISTANT → ["assistant"])
+model Position {
+  id Int @id @default(autoincrement())
+
+  name       String /// Intitulé du poste, unique au sein du secteur
+  type       PositionType  @default(COLLABORATEUR)
+  scope      PositionScope @default(SECTOR)
+  isPrimary  Boolean       @default(false)
+  jobDetails Json? /// Détails du poste (ex: compétences, missions) au format JSON
+
+  /// ── Self-relation pour la hiérarchie parent / enfant ──
+  parentPosition   Position?  @relation("PositionHierarchy", fields: [parentPositionId], references: [id], onDelete: SetNull)
+  parentPositionId Int?
+  childPositions   Position[] @relation("PositionHierarchy")
+
+  /// ── Rattachement au secteur ──
+  sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: Restrict)
+  sectorId Int?
+
+  /// ── Rattachement au département (pour les directeurs) ──
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  departmentId Int?
+
+  /// ── Occupant du poste (relation 1:1 optionnelle) ──
+  /// Un poste peut être vacant (member = null).
+  /// Un membre ne peut occuper qu'un seul poste à la fois.
+  member            Member?
+  memberAssignments MemberPositionAssignment[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastMobility DateTime?
+
+  @@unique([sectorId, name]) /// Unicité du nom de poste par secteur
+  @@unique([departmentId, type]) /// Un seul directeur par département (appliqué quand departmentId est renseigné)
+  @@index([sectorId])
+  @@index([departmentId])
+  @@index([parentPositionId])
+  @@index([name])
+  @@index([type])
+  @@map("position")
+}
+
+// ─── MEMBER ─────────────────────────────────────────────────────────────────────
+
+/// Un membre est une personne physique de l'entreprise.
+/// Il occupe zéro ou un poste (relation 1:1 vers Position).
+///
+/// Données personnelles : nom, prénom, date de naissance, genre, bio, avatar.
+/// Données professionnelles : email, téléphone, type de contrat, statut, dates.
+model Member {
+  id          Int    @id @default(autoincrement())
+  serviceCode String @unique /// Matricule RH — clé de synchro pour import CSV
+
+  // ── Données personnelles ──────────────────────────────────
+  firstname String
+  lastname  String
+  birthday  DateTime?
+  gender    Gender    @default(AUTRE)
+  avatarUrl String? /// URL de l'avatar (stockage cloud)
+  avatarKey String? /// Clé objet S3/MinIO de l'avatar
+
+  // ── Coordonnées ───────────────────────────────────────────
+  professionalEmail String  @unique /// Email professionnel
+  phone             String?
+
+  // ── Données professionnelles ──────────────────────────────
+  startDate    DateTime /// Date d'embauche
+  endDate      DateTime? /// Date de fin de contrat (null = en cours)
+  status       MemberStatus @default(ACTIF)
+  isReferentRH Boolean      @default(false)
+
+  // ── Relations ─────────────────────────────────────────────
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  locationId Int?
+
+  /// Relation 1:1 vers le poste occupé. positionId est @unique pour garantir
+  /// qu'un poste n'est occupé que par un seul membre.
+  /// Ce champ représente désormais le poste principal du membre.
+  position            Position?                  @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  positionId          Int?                       @unique
+  positionAssignments MemberPositionAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([firstname, lastname]) /// Recherche trombinoscope
+  @@index([lastname])
+  @@index([professionalEmail])
+  @@index([serviceCode])
+  @@index([status])
+  @@index([avatarKey])
+  @@map("member")
+}
+
+/// Affectation d'un membre à un poste.
+/// Contraintes métier :
+/// - un poste ne peut être occupé que par un seul membre (unique positionId)
+/// - un membre ne peut pas avoir deux postes dans le même secteur (unique memberId+sectorId)
+/// - le poste principal est géré par `isPrimary` (contrainte applicative)
+model MemberPositionAssignment {
+  id Int @id @default(autoincrement())
+
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId Int
+
+  position   Position @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  positionId Int      @unique
+
+  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Restrict)
+  sectorId Int
+
+  isPrimary  Boolean  @default(false)
+  assignedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([memberId, positionId])
+  @@unique([memberId, sectorId])
+  @@index([memberId])
+  @@index([sectorId])
+  @@index([isPrimary])
+  @@map("member_position_assignment")
+}
