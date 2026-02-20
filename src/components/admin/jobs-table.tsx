@@ -712,11 +712,16 @@ export default function JobsTable() {
                     <SelectContent>
                       <SelectItem value="none">Aucun</SelectItem>
                       {allPositions
-                        .filter(
-                          (position) =>
-                            position.id !== editDialog?.id &&
-                            String(position.sectorId ?? "") === watchedSectorId,
-                        )
+                        .filter((position) => {
+                          if (position.id === editDialog?.id) return false;
+                          const sameSector =
+                            String(position.sectorId ?? "") === watchedSectorId;
+                          const isDeptDirector =
+                            position.sectorId === null &&
+                            editDepartmentId &&
+                            position.departmentId === Number(editDepartmentId);
+                          return sameSector || isDeptDirector;
+                        })
                         .map((position) => (
                           <SelectItem
                             key={position.id}

@@ -405,10 +405,16 @@ export default function JobsAdminPage() {
                     <SelectContent>
                       <SelectItem value="none">Aucun</SelectItem>
                       {availableParentPositions
-                        .filter(
-                          (position) =>
-                            String(position.sectorId ?? "") === watchedSectorId,
-                        )
+                        .filter((position) => {
+                          const sameSector =
+                            String(position.sectorId ?? "") === watchedSectorId;
+                          const isDeptDirector =
+                            position.sectorId === null &&
+                            selectedDepartmentId &&
+                            position.departmentId ===
+                              Number(selectedDepartmentId);
+                          return sameSector || isDeptDirector;
+                        })
                         .map((position) => (
                           <SelectItem
                             key={position.id}
