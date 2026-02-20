@@ -192,6 +192,8 @@ export default function JobsTable() {
     },
   });
 
+  const watchedSectorId = form.watch("sectorId");
+
   const isDepartmentDirector = selectedPositionType === "DIRECTEUR";
 
   const openEditDialog = (position: PositionDto) => {
@@ -565,6 +567,7 @@ export default function JobsTable() {
                         );
                         if (value === "DIRECTEUR") {
                           form.setValue("sectorId", "");
+                          form.setValue("parentPositionId", "none");
                         }
                       }}
                     >
@@ -694,14 +697,26 @@ export default function JobsTable() {
                 control={form.control}
                 name="parentPositionId"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={
+                      isDepartmentDirector ||
+                      !watchedSectorId ||
+                      watchedSectorId === ""
+                    }
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Aucun" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Aucun</SelectItem>
                       {allPositions
-                        .filter((position) => position.id !== editDialog?.id)
+                        .filter(
+                          (position) =>
+                            position.id !== editDialog?.id &&
+                            String(position.sectorId ?? "") === watchedSectorId,
+                        )
                         .map((position) => (
                           <SelectItem
                             key={position.id}

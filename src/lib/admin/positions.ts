@@ -1870,16 +1870,16 @@ export async function deletePosition(id: number): Promise<void> {
 
       // Supprimer les assignations pour ce poste
       await tx.memberPositionAssignment.deleteMany({
-        where: { positionId: id } as any,
+        where: { positionId: id },
       });
 
       // Dé-référencer la position principale des membres concernés
       await tx.member.updateMany({
-        where: { id: { in: memberIds } } as any,
-        data: { positionId: null } as any,
+        where: { id: { in: memberIds } },
+        data: { positionId: null },
       });
     }
 
-    await tx.position.delete({ where: { id } as any } as any);
+    await tx.position.delete({ where: { id } });
   });
 }

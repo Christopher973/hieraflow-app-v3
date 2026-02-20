@@ -130,6 +130,8 @@ export default function JobsAdminPage() {
     },
   });
 
+  const watchedSectorId = form.watch("sectorId");
+
   const isDepartmentDirector = selectedPositionType === "DIRECTEUR";
 
   const onSubmit = async (data: CreatePositionFormValues) => {
@@ -260,6 +262,7 @@ export default function JobsAdminPage() {
                         setSelectedPositionType(value as CreatePositionType);
                         if (value === "DIRECTEUR") {
                           form.setValue("sectorId", "");
+                          form.setValue("parentPositionId", "none");
                         }
                       }}
                     >
@@ -387,20 +390,33 @@ export default function JobsAdminPage() {
                 control={form.control}
                 name="parentPositionId"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={
+                      isDepartmentDirector ||
+                      !watchedSectorId ||
+                      watchedSectorId === ""
+                    }
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Aucun poste parent" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Aucun</SelectItem>
-                      {availableParentPositions.map((position) => (
-                        <SelectItem
-                          key={position.id}
-                          value={String(position.id)}
-                        >
-                          {position.name}
-                        </SelectItem>
-                      ))}
+                      {availableParentPositions
+                        .filter(
+                          (position) =>
+                            String(position.sectorId ?? "") === watchedSectorId,
+                        )
+                        .map((position) => (
+                          <SelectItem
+                            key={position.id}
+                            value={String(position.id)}
+                          >
+                            {position.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 )}
