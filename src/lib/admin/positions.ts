@@ -1823,16 +1823,25 @@ export async function deletePosition(id: number): Promise<void> {
       throwPrismaLikeError("P2025", "Record to delete does not exist.");
     }
 
-    // 2. Vérifier qu'aucun membre n'occupe ce poste
-    const memberCheck = (await prisma.$queryRawUnsafe(
-      `SELECT id FROM member_position_assignment WHERE positionId = ? LIMIT 1`,
+    // 2. Récupérer les membres occupant ce poste et supprimer les assignations
+    const memberRows = (await prisma.$queryRawUnsafe(
+      `SELECT DISTINCT memberId FROM member_position_assignment WHERE positionId = ?`,
       id,
-    )) as Array<{ id: number }>;
+    )) as Array<{ memberId: number }>;
 
-    if (memberCheck.length > 0) {
-      throwPrismaLikeError(
-        "P2003",
-        "Foreign key constraint failed: position is assigned to a member",
+    if (memberRows.length > 0) {
+      // Supprimer toutes les assignations pour ce poste
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM member_position_assignment WHERE positionId = ?`,
+        id,
+      );
+
+      // Mettre à jour les membres concernés pour retirer la référence au poste principal
+      const memberIds = memberRows.map((r) => r.memberId);
+      const placeholders = memberIds.map(() => "?").join(",");
+      await prisma.$executeRawUnsafe(
+        `UPDATE \`member\` SET positionId = NULL WHERE id IN (${placeholders})`,
+        ...memberIds,
       );
     }
 
@@ -1849,8 +1858,28 @@ export async function deletePosition(id: number): Promise<void> {
     return;
   }
 
-  // Utilisation de Prisma ORM
-  await positionModel.delete({
-    where: { id },
+  // Utilisation de Prisma ORM — supprimer d'abord les assignations et dé-référencer les membres
+  await prisma.$transaction(async (tx) => {
+    const occupied = (await tx.memberPositionAssignment.findMany({
+      where: { positionId: id },
+      select: { memberId: true },
+    })) as Array<{ memberId: number }>;
+
+    if (occupied.length > 0) {
+      const memberIds = occupied.map((r) => r.memberId);
+
+      // Supprimer les assignations pour ce poste
+      await tx.memberPositionAssignment.deleteMany({
+        where: { positionId: id } as any,
+      });
+
+      // Dé-référencer la position principale des membres concernés
+      await tx.member.updateMany({
+        where: { id: { in: memberIds } } as any,
+        data: { positionId: null } as any,
+      });
+    }
+
+    await tx.position.delete({ where: { id } as any } as any);
   });
 }
