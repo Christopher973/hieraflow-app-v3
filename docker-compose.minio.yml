@@ -2,15 +2,14 @@ services:
   minio:
     image: minio/minio:latest
     container_name: minio
+    restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: "christopher"
+      MINIO_ROOT_PASSWORD: "Christopher.2211"
     volumes:
-      - minio-data:/data
+      - /opt/minio/data:/data
+      - /opt/minio/config:/root/.minio
     ports:
-      - "9000:9000" # API
-      - "9001:9001" # Console
-    command: server /data --console-address :9001
-
-volumes:
-  minio-data:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
