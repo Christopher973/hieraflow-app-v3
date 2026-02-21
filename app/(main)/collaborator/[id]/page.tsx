@@ -189,7 +189,7 @@ export default function CollaboratorPage() {
                               className="border-b px-4 last:border-b-0"
                             >
                               <AccordionTrigger>
-                                <div className="flex items-center justify-between w-full gap-2">
+                                <div className="flex flex-col md:flex-row justify-between w-full gap-2">
                                   <p className="truncate" title={position.name}>
                                     {position.name}
                                   </p>
@@ -421,6 +421,7 @@ export default function CollaboratorPage() {
                                       <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
                                         {manager.firstname} {manager.lastname}
                                       </h4>
+                                      <Badge>Référent RH</Badge>
                                     </li>
                                     <li>
                                       <Link
@@ -527,7 +528,7 @@ export default function CollaboratorPage() {
                                       <li>
                                         <Link
                                           href={`mailto:${member.professionalEmail}`}
-                                          className="flex items-center gap-2 text-primary"
+                                          className="flex items-center gap-2 text-primary w-20"
                                           onClick={(event) =>
                                             event.stopPropagation()
                                           }
