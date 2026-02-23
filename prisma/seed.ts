@@ -3,7 +3,7 @@ import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "./src/generated/prisma/client";
 
-import demoData from "../src/lib/demo-data.json";
+import demoData from "../src/lib/demo-3-depts.json";
 
 type DemoDepartment = {
   id: number;

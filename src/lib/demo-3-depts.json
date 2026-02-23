@@ -1,0 +1,743 @@
+{
+  "departments": [
+    { "id": 1, "name": "IT" },
+    { "id": 2, "name": "Marketing" },
+    { "id": 3, "name": "Operations" }
+  ],
+  "sectors": [
+    { "id": 1, "name": "Cybersecurite", "departmentId": 1 },
+    { "id": 2, "name": "Infrastructure", "departmentId": 1 },
+    { "id": 3, "name": "Branding", "departmentId": 2 },
+    { "id": 4, "name": "Growth", "departmentId": 2 },
+    { "id": 5, "name": "SupplyChain", "departmentId": 3 },
+    { "id": 6, "name": "CustomerService", "departmentId": 3 }
+  ],
+  "positions": [
+    {
+      "id": 1,
+      "name": "Directeur Departement IT",
+      "type": "DIRECTEUR",
+      "sectorId": 1,
+      "parentPositionId": null
+    },
+    {
+      "id": 2,
+      "name": "Assistant Direction IT",
+      "type": "ASSISTANT",
+      "sectorId": 1,
+      "parentPositionId": 1
+    },
+    {
+      "id": 3,
+      "name": "Responsable Cybersecurite A",
+      "type": "RESPONSABLE",
+      "sectorId": 1,
+      "parentPositionId": 1
+    },
+    {
+      "id": 4,
+      "name": "Responsable Cybersecurite B",
+      "type": "RESPONSABLE",
+      "sectorId": 2,
+      "parentPositionId": 1
+    },
+    {
+      "id": 5,
+      "name": "Collaborateur Cybersec A1",
+      "type": "COLLABORATEUR",
+      "sectorId": 1,
+      "parentPositionId": 3
+    },
+    {
+      "id": 6,
+      "name": "Collaborateur Cybersec A2",
+      "type": "COLLABORATEUR",
+      "sectorId": 1,
+      "parentPositionId": 3
+    },
+    {
+      "id": 7,
+      "name": "Collaborateur Cybersec A3",
+      "type": "COLLABORATEUR",
+      "sectorId": 1,
+      "parentPositionId": 3
+    },
+    {
+      "id": 8,
+      "name": "Collaborateur Cybersec A4",
+      "type": "COLLABORATEUR",
+      "sectorId": 1,
+      "parentPositionId": 3
+    },
+    {
+      "id": 9,
+      "name": "Collaborateur Infra B1",
+      "type": "COLLABORATEUR",
+      "sectorId": 2,
+      "parentPositionId": 4
+    },
+    {
+      "id": 10,
+      "name": "Collaborateur Infra B2",
+      "type": "COLLABORATEUR",
+      "sectorId": 2,
+      "parentPositionId": 4
+    },
+    {
+      "id": 11,
+      "name": "Collaborateur Infra B3",
+      "type": "COLLABORATEUR",
+      "sectorId": 2,
+      "parentPositionId": 4
+    },
+    {
+      "id": 12,
+      "name": "Collaborateur Infra B4",
+      "type": "COLLABORATEUR",
+      "sectorId": 2,
+      "parentPositionId": 4
+    },
+
+    {
+      "id": 13,
+      "name": "Directeur Departement Marketing",
+      "type": "DIRECTEUR",
+      "sectorId": 3,
+      "parentPositionId": null
+    },
+    {
+      "id": 14,
+      "name": "Assistant Direction Marketing",
+      "type": "ASSISTANT",
+      "sectorId": 3,
+      "parentPositionId": 13
+    },
+    {
+      "id": 15,
+      "name": "Responsable Branding A",
+      "type": "RESPONSABLE",
+      "sectorId": 3,
+      "parentPositionId": 13
+    },
+    {
+      "id": 16,
+      "name": "Responsable Branding B",
+      "type": "RESPONSABLE",
+      "sectorId": 4,
+      "parentPositionId": 13
+    },
+    {
+      "id": 17,
+      "name": "Collaborateur Branding A1",
+      "type": "COLLABORATEUR",
+      "sectorId": 3,
+      "parentPositionId": 15
+    },
+    {
+      "id": 18,
+      "name": "Collaborateur Branding A2",
+      "type": "COLLABORATEUR",
+      "sectorId": 3,
+      "parentPositionId": 15
+    },
+    {
+      "id": 19,
+      "name": "Collaborateur Branding A3",
+      "type": "COLLABORATEUR",
+      "sectorId": 3,
+      "parentPositionId": 15
+    },
+    {
+      "id": 20,
+      "name": "Collaborateur Branding A4",
+      "type": "COLLABORATEUR",
+      "sectorId": 3,
+      "parentPositionId": 15
+    },
+    {
+      "id": 21,
+      "name": "Collaborateur Growth B1",
+      "type": "COLLABORATEUR",
+      "sectorId": 4,
+      "parentPositionId": 16
+    },
+    {
+      "id": 22,
+      "name": "Collaborateur Growth B2",
+      "type": "COLLABORATEUR",
+      "sectorId": 4,
+      "parentPositionId": 16
+    },
+    {
+      "id": 23,
+      "name": "Collaborateur Growth B3",
+      "type": "COLLABORATEUR",
+      "sectorId": 4,
+      "parentPositionId": 16
+    },
+    {
+      "id": 24,
+      "name": "Collaborateur Growth B4",
+      "type": "COLLABORATEUR",
+      "sectorId": 4,
+      "parentPositionId": 16
+    },
+
+    {
+      "id": 25,
+      "name": "Directeur Departement Operations",
+      "type": "DIRECTEUR",
+      "sectorId": 5,
+      "parentPositionId": null
+    },
+    {
+      "id": 26,
+      "name": "Assistant Direction Operations",
+      "type": "ASSISTANT",
+      "sectorId": 5,
+      "parentPositionId": 25
+    },
+    {
+      "id": 27,
+      "name": "Responsable SupplyChain A",
+      "type": "RESPONSABLE",
+      "sectorId": 5,
+      "parentPositionId": 25
+    },
+    {
+      "id": 28,
+      "name": "Responsable SupplyChain B",
+      "type": "RESPONSABLE",
+      "sectorId": 6,
+      "parentPositionId": 25
+    },
+    {
+      "id": 29,
+      "name": "Collaborateur Supply A1",
+      "type": "COLLABORATEUR",
+      "sectorId": 5,
+      "parentPositionId": 27
+    },
+    {
+      "id": 30,
+      "name": "Collaborateur Supply A2",
+      "type": "COLLABORATEUR",
+      "sectorId": 5,
+      "parentPositionId": 27
+    },
+    {
+      "id": 31,
+      "name": "Collaborateur Supply A3",
+      "type": "COLLABORATEUR",
+      "sectorId": 5,
+      "parentPositionId": 27
+    },
+    {
+      "id": 32,
+      "name": "Collaborateur Supply A4",
+      "type": "COLLABORATEUR",
+      "sectorId": 5,
+      "parentPositionId": 27
+    },
+    {
+      "id": 33,
+      "name": "Collaborateur Customer B1",
+      "type": "COLLABORATEUR",
+      "sectorId": 6,
+      "parentPositionId": 28
+    },
+    {
+      "id": 34,
+      "name": "Collaborateur Customer B2",
+      "type": "COLLABORATEUR",
+      "sectorId": 6,
+      "parentPositionId": 28
+    },
+    {
+      "id": 35,
+      "name": "Collaborateur Customer B3",
+      "type": "COLLABORATEUR",
+      "sectorId": 6,
+      "parentPositionId": 28
+    },
+    {
+      "id": 36,
+      "name": "Collaborateur Customer B4",
+      "type": "COLLABORATEUR",
+      "sectorId": 6,
+      "parentPositionId": 28
+    }
+  ],
+  "members": [
+    {
+      "id": 1,
+      "serviceCode": "EMP-1001",
+      "firstname": "Claire",
+      "lastname": "Dumas",
+      "gender": "FEMME",
+      "professionalEmail": "claire.dumas@demo.local",
+      "phone": "0600100001",
+      "startDate": "2020-02-10T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": true,
+      "positionId": 1
+    },
+    {
+      "id": 2,
+      "serviceCode": "EMP-1002",
+      "firstname": "Hugo",
+      "lastname": "Morel",
+      "gender": "HOMME",
+      "professionalEmail": "hugo.morel@demo.local",
+      "phone": "0600100002",
+      "startDate": "2021-03-15T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 2
+    },
+    {
+      "id": 3,
+      "serviceCode": "EMP-1003",
+      "firstname": "Nora",
+      "lastname": "Leroy",
+      "gender": "FEMME",
+      "professionalEmail": "nora.leroy@demo.local",
+      "phone": "0600100003",
+      "startDate": "2019-06-01T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 3
+    },
+    {
+      "id": 4,
+      "serviceCode": "EMP-1004",
+      "firstname": "Alex",
+      "lastname": "Renaud",
+      "gender": "HOMME",
+      "professionalEmail": "alex.renaud@demo.local",
+      "phone": "0600100004",
+      "startDate": "2022-01-05T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 4
+    },
+    {
+      "id": 5,
+      "serviceCode": "EMP-1005",
+      "firstname": "Julien",
+      "lastname": "Garnier",
+      "gender": "HOMME",
+      "professionalEmail": "julien.garnier@demo.local",
+      "phone": "0600100005",
+      "startDate": "2018-11-20T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 5
+    },
+    {
+      "id": 6,
+      "serviceCode": "EMP-1006",
+      "firstname": "Sarah",
+      "lastname": "Roux",
+      "gender": "FEMME",
+      "professionalEmail": "sarah.roux@demo.local",
+      "phone": "0600100006",
+      "startDate": "2018-12-01T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 6
+    },
+    {
+      "id": 7,
+      "serviceCode": "EMP-1007",
+      "firstname": "Leo",
+      "lastname": "Baron",
+      "gender": "HOMME",
+      "professionalEmail": "leo.baron@demo.local",
+      "phone": "0600100007",
+      "startDate": "2023-02-10T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 7
+    },
+    {
+      "id": 8,
+      "serviceCode": "EMP-1008",
+      "firstname": "Emma",
+      "lastname": "Caron",
+      "gender": "FEMME",
+      "professionalEmail": "emma.caron@demo.local",
+      "phone": "0600100008",
+      "startDate": "2023-02-11T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 8
+    },
+    {
+      "id": 9,
+      "serviceCode": "EMP-1009",
+      "firstname": "Lucas",
+      "lastname": "Colin",
+      "gender": "HOMME",
+      "professionalEmail": "lucas.colin@demo.local",
+      "phone": "0600100009",
+      "startDate": "2023-02-12T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 9
+    },
+    {
+      "id": 10,
+      "serviceCode": "EMP-1010",
+      "firstname": "Alice",
+      "lastname": "Meyer",
+      "gender": "FEMME",
+      "professionalEmail": "alice.meyer@demo.local",
+      "phone": "0600100010",
+      "startDate": "2023-02-13T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 10
+    },
+    {
+      "id": 11,
+      "serviceCode": "EMP-1011",
+      "firstname": "Olivier",
+      "lastname": "Perrin",
+      "gender": "HOMME",
+      "professionalEmail": "olivier.perrin@demo.local",
+      "phone": "0600100011",
+      "startDate": "2023-02-14T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 11
+    },
+    {
+      "id": 12,
+      "serviceCode": "EMP-1012",
+      "firstname": "Mila",
+      "lastname": "Chevalier",
+      "gender": "FEMME",
+      "professionalEmail": "mila.chevalier@demo.local",
+      "phone": "0600100012",
+      "startDate": "2023-02-15T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 12
+    },
+
+    {
+      "id": 13,
+      "serviceCode": "EMP-1013",
+      "firstname": "Pierre",
+      "lastname": "Marchand",
+      "gender": "HOMME",
+      "professionalEmail": "pierre.marchand@demo.local",
+      "phone": "0600100013",
+      "startDate": "2019-09-02T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 13
+    },
+    {
+      "id": 14,
+      "serviceCode": "EMP-1014",
+      "firstname": "Ines",
+      "lastname": "Blanc",
+      "gender": "FEMME",
+      "professionalEmail": "ines.blanc@demo.local",
+      "phone": "0600100014",
+      "startDate": "2022-04-12T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 14
+    },
+    {
+      "id": 15,
+      "serviceCode": "EMP-1015",
+      "firstname": "Matteo",
+      "lastname": "Leclerc",
+      "gender": "HOMME",
+      "professionalEmail": "matteo.leclerc@demo.local",
+      "phone": "0600100015",
+      "startDate": "2019-11-10T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 15
+    },
+    {
+      "id": 16,
+      "serviceCode": "EMP-1016",
+      "firstname": "Chloe",
+      "lastname": "Philippe",
+      "gender": "FEMME",
+      "professionalEmail": "chloe.philippe@demo.local",
+      "phone": "0600100016",
+      "startDate": "2019-11-12T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 16
+    },
+    {
+      "id": 17,
+      "serviceCode": "EMP-1017",
+      "firstname": "Romain",
+      "lastname": "Sanchez",
+      "gender": "HOMME",
+      "professionalEmail": "romain.sanchez@demo.local",
+      "phone": "0600100017",
+      "startDate": "2023-03-01T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 17
+    },
+    {
+      "id": 18,
+      "serviceCode": "EMP-1018",
+      "firstname": "Manon",
+      "lastname": "Fernandez",
+      "gender": "FEMME",
+      "professionalEmail": "manon.fernandez@demo.local",
+      "phone": "0600100018",
+      "startDate": "2023-03-02T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 18
+    },
+    {
+      "id": 19,
+      "serviceCode": "EMP-1019",
+      "firstname": "Kevin",
+      "lastname": "Lopez",
+      "gender": "HOMME",
+      "professionalEmail": "kevin.lopez@demo.local",
+      "phone": "0600100019",
+      "startDate": "2023-03-03T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 19
+    },
+    {
+      "id": 20,
+      "serviceCode": "EMP-1020",
+      "firstname": "Eva",
+      "lastname": "Muller",
+      "gender": "FEMME",
+      "professionalEmail": "eva.muller@demo.local",
+      "phone": "0600100020",
+      "startDate": "2023-03-04T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 20
+    },
+    {
+      "id": 21,
+      "serviceCode": "EMP-1021",
+      "firstname": "Axel",
+      "lastname": "Giraud",
+      "gender": "HOMME",
+      "professionalEmail": "axel.giraud@demo.local",
+      "phone": "0600100021",
+      "startDate": "2023-03-05T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 21
+    },
+    {
+      "id": 22,
+      "serviceCode": "EMP-1022",
+      "firstname": "Lina",
+      "lastname": "Gonzalez",
+      "gender": "FEMME",
+      "professionalEmail": "lina.gonzalez@demo.local",
+      "phone": "0600100022",
+      "startDate": "2023-03-06T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 22
+    },
+    {
+      "id": 23,
+      "serviceCode": "EMP-1023",
+      "firstname": "Theo",
+      "lastname": "Arnaud",
+      "gender": "HOMME",
+      "professionalEmail": "theo.arnaud@demo.local",
+      "phone": "0600100023",
+      "startDate": "2023-03-07T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 23
+    },
+    {
+      "id": 24,
+      "serviceCode": "EMP-1024",
+      "firstname": "Sara",
+      "lastname": "Poirier",
+      "gender": "FEMME",
+      "professionalEmail": "sara.poirier@demo.local",
+      "phone": "0600100024",
+      "startDate": "2023-03-08T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 24
+    },
+
+    {
+      "id": 25,
+      "serviceCode": "EMP-1025",
+      "firstname": "Isabelle",
+      "lastname": "Roy",
+      "gender": "FEMME",
+      "professionalEmail": "isabelle.roy@demo.local",
+      "phone": "0600100025",
+      "startDate": "2018-05-10T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 25
+    },
+    {
+      "id": 26,
+      "serviceCode": "EMP-1026",
+      "firstname": "Mathis",
+      "lastname": "Clement",
+      "gender": "HOMME",
+      "professionalEmail": "mathis.clement@demo.local",
+      "phone": "0600100026",
+      "startDate": "2021-09-12T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 26
+    },
+    {
+      "id": 27,
+      "serviceCode": "EMP-1027",
+      "firstname": "Aurelie",
+      "lastname": "Fontaine",
+      "gender": "FEMME",
+      "professionalEmail": "aurelie.fontaine@demo.local",
+      "phone": "0600100027",
+      "startDate": "2019-10-01T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 27
+    },
+    {
+      "id": 28,
+      "serviceCode": "EMP-1028",
+      "firstname": "Gabin",
+      "lastname": "Andre",
+      "gender": "HOMME",
+      "professionalEmail": "gabin.andre@demo.local",
+      "phone": "0600100028",
+      "startDate": "2022-05-03T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 28
+    },
+    {
+      "id": 29,
+      "serviceCode": "EMP-1029",
+      "firstname": "Marine",
+      "lastname": "Chauvet",
+      "gender": "FEMME",
+      "professionalEmail": "marine.chauvet@demo.local",
+      "phone": "0600100029",
+      "startDate": "2020-11-15T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 29
+    },
+    {
+      "id": 30,
+      "serviceCode": "EMP-1030",
+      "firstname": "Julian",
+      "lastname": "Meunier",
+      "gender": "HOMME",
+      "professionalEmail": "julian.meunier@demo.local",
+      "phone": "0600100030",
+      "startDate": "2020-11-16T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 30
+    },
+    {
+      "id": 31,
+      "serviceCode": "EMP-1031",
+      "firstname": "Salome",
+      "lastname": "Dufour",
+      "gender": "FEMME",
+      "professionalEmail": "salome.dufour@demo.local",
+      "phone": "0600100031",
+      "startDate": "2023-02-01T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 31
+    },
+    {
+      "id": 32,
+      "serviceCode": "EMP-1032",
+      "firstname": "Jules",
+      "lastname": "Guerin",
+      "gender": "HOMME",
+      "professionalEmail": "jules.guerin@demo.local",
+      "phone": "0600100032",
+      "startDate": "2023-02-02T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 32
+    },
+    {
+      "id": 33,
+      "serviceCode": "EMP-1033",
+      "firstname": "Maeva",
+      "lastname": "Riviere",
+      "gender": "FEMME",
+      "professionalEmail": "maeva.riviere@demo.local",
+      "phone": "0600100033",
+      "startDate": "2023-02-03T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 33
+    },
+    {
+      "id": 34,
+      "serviceCode": "EMP-1034",
+      "firstname": "Sacha",
+      "lastname": "Martel",
+      "gender": "HOMME",
+      "professionalEmail": "sacha.martel@demo.local",
+      "phone": "0600100034",
+      "startDate": "2023-02-04T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 34
+    },
+    {
+      "id": 35,
+      "serviceCode": "EMP-1035",
+      "firstname": "Elena",
+      "lastname": "Payet",
+      "gender": "FEMME",
+      "professionalEmail": "elena.payet@demo.local",
+      "phone": "0600100035",
+      "startDate": "2023-02-05T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 35
+    },
+    {
+      "id": 36,
+      "serviceCode": "EMP-1036",
+      "firstname": "Anis",
+      "lastname": "Carlier",
+      "gender": "HOMME",
+      "professionalEmail": "anis.carlier@demo.local",
+      "phone": "0600100036",
+      "startDate": "2023-02-06T00:00:00.000Z",
+      "status": "ACTIF",
+      "isReferentRH": false,
+      "positionId": 36
+    }
+  ]
+}

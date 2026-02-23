@@ -267,7 +267,7 @@ echo "<GHCR_TOKEN>" | docker login ghcr.io -u <GHCR_USERNAME> --password-stdin
 
 ```bash
 cd /opt/hieraflow
-docker compose pull hieraflow
+docker compose pull
 ```
 
 3. Mettre à jour la stack (recreate service et exécuter migrations) :

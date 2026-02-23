@@ -526,11 +526,12 @@ export function UploadFile() {
         </Alert>
       )}
 
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex flex-col items-center justify-center gap-2">
         {file && (
           <Button
             onClick={() => handleFileUpload(file)}
             disabled={isProcessing}
+            className="w-full"
           >
             {isProcessing ? <Loader2 className="animate-spin" /> : <Import />}
             {isProcessing ? "Import en cours..." : "Importer le fichier"}
