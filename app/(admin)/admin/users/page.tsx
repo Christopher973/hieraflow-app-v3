@@ -58,8 +58,10 @@ export default async function UsersAdminPage({
         </CardTitle>
 
         <CardDescription>
-          Visualiez et gérer les utilisateurs de l'application, leurs rôles et
-          permissions.
+          <p className="text-lg">
+            Visualiez et gérer les utilisateurs de l'application, leurs rôles et
+            permissions.
+          </p>
         </CardDescription>
       </CardHeader>
 

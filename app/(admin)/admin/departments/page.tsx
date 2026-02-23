@@ -77,14 +77,16 @@ export default function DepartmentsAdminPage() {
         </CardTitle>
 
         <CardDescription>
-          Visualiez, créer, modifier ou encore supprimer les Départements de
-          l'organisation.
+          <p className="text-lg">
+            Visualiez, créer, modifier ou encore supprimer les Départements de
+            l'organisation.
+          </p>
         </CardDescription>
 
         <CardAction>
           <Button onClick={() => setOpen(true)}>
             <CirclePlus />
-            Créer un département
+            <span className="hidden md:block">Créer un département</span>
           </Button>
         </CardAction>
       </CardHeader>

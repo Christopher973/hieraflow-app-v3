@@ -234,8 +234,10 @@ export default function CollaboratorsAdminPage() {
         </CardTitle>
 
         <CardDescription>
-          Visualisez, créez, modifiez ou supprimez les collaborateurs de
-          l'organisation.
+          <p className="text-lg">
+            Visualisez, créez, modifiez ou supprimez les collaborateurs de
+            l'organisation.
+          </p>
         </CardDescription>
 
         <CardAction>

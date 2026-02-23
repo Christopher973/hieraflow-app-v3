@@ -75,7 +75,7 @@ const createPositionFormSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["sectorId"],
-        message: "Le secteur est obligatoire.",
+        message: "Le service=  est obligatoire.",
       });
     }
   });
@@ -207,8 +207,10 @@ export default function JobsAdminPage() {
         </CardTitle>
 
         <CardDescription>
-          Visualisez, créez, modifiez ou supprimez les postes des collaborateurs
-          de l'organisation.
+          <p className="text-lg">
+            Visualisez, créez, modifiez ou supprimez les postes des
+            collaborateurs de l'organisation.
+          </p>
         </CardDescription>
 
         <CardAction>
@@ -319,7 +321,7 @@ export default function JobsAdminPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Secteur</Label>
+                <Label>Sevice</Label>
                 <Controller
                   control={form.control}
                   name="sectorId"
@@ -335,7 +337,7 @@ export default function JobsAdminPage() {
                             isDepartmentDirector
                               ? "Non applicable pour un directeur"
                               : selectedDepartmentId
-                                ? "Sélectionner un secteur"
+                                ? "Sélectionner un service"
                                 : "Sélectionnez d'abord un département"
                           }
                         />

@@ -35,9 +35,11 @@ export default async function JobMobility() {
           </h2>
         </CardTitle>
         <CardDescription>
-          Suivez l'évolution des talents et identifiez les nouvelles prises de
-          responsabilités pour garantir l'agilité et la lisibilité de
-          l'organisation.
+          <p className="text-lg">
+            Suivez l'évolution des talents et identifiez les nouvelles prises de
+            responsabilités pour garantir l'agilité et la lisibilité de
+            l'organisation.
+          </p>
         </CardDescription>
       </CardHeader>
 

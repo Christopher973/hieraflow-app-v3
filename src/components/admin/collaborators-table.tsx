@@ -12,6 +12,7 @@ import {
   Upload,
   X,
   XIcon,
+  Check,
 } from "lucide-react";
 
 import { useCollaborators } from "@/src/hooks/use-collaborators";
@@ -153,6 +154,40 @@ export default function CollaboratorsTable() {
   const [positionFilter, setPositionFilter] = useState("all");
   const [rhFilter, setRhFilter] = useState<"all" | "true" | "false">("all");
   const [page, setPage] = useState(1);
+
+  // Colonnes optionnelles affichables
+  const optionalFieldOptions = [
+    { key: "serviceCode", label: "Matricule" },
+    { key: "birthday", label: "Date de naissance" },
+    { key: "startDate", label: "Date d'entrée" },
+    { key: "endDate", label: "Date de sortie prévue" },
+    { key: "phone", label: "Numéro de téléphone" },
+    { key: "gender", label: "Genre" },
+    { key: "positionsCount", label: "Nombre de poste" },
+  ] as const;
+
+  const [visibleOptionalFields, setVisibleOptionalFields] = useState<string[]>(
+    [],
+  );
+
+  const formatDate = (value: string | null | undefined) => {
+    if (!value) return "-";
+    try {
+      const datePart = String(value).slice(0, 10); // YYYY-MM-DD
+      const [year, month, day] = datePart.split("-");
+      if (year && month && day) return `${day}/${month}/${year}`;
+    } catch {}
+    // Fallback
+    const d = new Date(String(value));
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("fr-FR");
+  };
+
+  const toggleOptionalField = (key: string) => {
+    setVisibleOptionalFields((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  };
 
   const [editDialog, setEditDialog] = useState<CollaboratorDto | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -497,6 +532,29 @@ export default function CollaboratorsTable() {
           </div>
         </SearchField>
 
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">Colonnes</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {optionalFieldOptions.map((opt) => (
+              <DropdownMenuItem
+                key={opt.key}
+                onClick={() => toggleOptionalField(opt.key)}
+              >
+                {visibleOptionalFields.includes(opt.key) ? (
+                  <Check className="size-4 mr-2" />
+                ) : (
+                  <span className="w-4 mr-2" />
+                )}
+                {opt.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Select
           value={genderFilter}
           onValueChange={(value) => {
@@ -571,12 +629,12 @@ export default function CollaboratorsTable() {
               placeholder={
                 departmentFilter === "all"
                   ? "Sélectionnez d'abord un département"
-                  : "Filtrer par secteur"
+                  : "Filtrer par service"
               }
             />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les secteurs</SelectItem>
+            <SelectItem value="all">Tous les services</SelectItem>
             {sectors.map((sector) => (
               <SelectItem key={sector.id} value={String(sector.id)}>
                 {sector.name}
@@ -584,9 +642,7 @@ export default function CollaboratorsTable() {
             ))}
           </SelectContent>
         </Select>
-      </div>
 
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <Select
           value={positionFilter}
           onValueChange={(value) => {
@@ -599,7 +655,7 @@ export default function CollaboratorsTable() {
             <SelectValue
               placeholder={
                 sectorFilter === "all"
-                  ? "Sélectionnez d'abord un secteur"
+                  ? "Sélectionnez d'abord un service"
                   : "Filtrer par poste"
               }
             />
@@ -664,12 +720,16 @@ export default function CollaboratorsTable() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Matricule</TableHead>
+                  <TableHead>Avatar</TableHead>
                   <TableHead>Nom complet</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Localisation</TableHead>
-                  <TableHead>Secteur</TableHead>
+                  <TableHead>Poste principal</TableHead>
                   <TableHead>Référent RH</TableHead>
+                  {visibleOptionalFields.map((key) => {
+                    const opt = optionalFieldOptions.find((o) => o.key === key);
+                    return <TableHead key={key}>{opt?.label ?? key}</TableHead>;
+                  })}
                   <TableHead>
                     <span className="sr-only">Actions</span>
                   </TableHead>
@@ -678,13 +738,32 @@ export default function CollaboratorsTable() {
               <TableBody>
                 {items.map((collaborator) => (
                   <TableRow key={collaborator.id}>
-                    <TableCell>{collaborator.serviceCode}</TableCell>
+                    <TableCell>
+                      <Avatar>
+                        {collaborator.avatarUrl ? (
+                          <AvatarImage src={collaborator.avatarUrl} />
+                        ) : (
+                          <AvatarFallback>
+                            {getNameFallback(
+                              `${collaborator.firstname} ${collaborator.lastname}`,
+                            )}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                    </TableCell>
+
                     <TableCell>
                       {collaborator.firstname} {collaborator.lastname}
                     </TableCell>
+
                     <TableCell>{collaborator.professionalEmail}</TableCell>
+
                     <TableCell>{collaborator.locationName ?? "-"}</TableCell>
-                    <TableCell>{collaborator.sectorName ?? "-"}</TableCell>
+
+                    <TableCell>
+                      {collaborator.positionName ?? "Aucun"}
+                    </TableCell>
+
                     <TableCell>
                       <Badge
                         variant={
@@ -694,6 +773,57 @@ export default function CollaboratorsTable() {
                         {collaborator.isReferentRH ? "Oui" : "Non"}
                       </Badge>
                     </TableCell>
+
+                    {visibleOptionalFields.map((key) => {
+                      switch (key) {
+                        case "serviceCode":
+                          return (
+                            <TableCell key={key}>
+                              {collaborator.serviceCode}
+                            </TableCell>
+                          );
+                        case "birthday":
+                          return (
+                            <TableCell key={key}>
+                              {formatDate(collaborator.birthday)}
+                            </TableCell>
+                          );
+                        case "startDate":
+                          return (
+                            <TableCell key={key}>
+                              {formatDate(collaborator.startDate)}
+                            </TableCell>
+                          );
+                        case "endDate":
+                          return (
+                            <TableCell key={key}>
+                              {formatDate(collaborator.endDate)}
+                            </TableCell>
+                          );
+                        case "phone":
+                          return (
+                            <TableCell key={key}>
+                              {collaborator.phone ?? "-"}
+                            </TableCell>
+                          );
+                        case "gender":
+                          return (
+                            <TableCell key={key}>
+                              {collaborator.gender ?? "-"}
+                            </TableCell>
+                          );
+                        case "positionsCount":
+                          // Approximation: list endpoint exposes only primary positionId
+                          return (
+                            <TableCell key={key}>
+                              {collaborator.positionId ? 1 : 0}
+                            </TableCell>
+                          );
+                        default:
+                          return <TableCell key={key}>-</TableCell>;
+                      }
+                    })}
+
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

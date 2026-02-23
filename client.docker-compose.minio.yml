@@ -4,16 +4,12 @@ services:
     container_name: minio
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: "minioadmin"
-      MINIO_ROOT_PASSWORD: "minioadmin"
+      MINIO_ROOT_USER: "minioadmin" # Change this to a secure username
+      MINIO_ROOT_PASSWORD: "minioadmin" # Change this to a secure password
     volumes:
-      - minio_data:/data
-      - minio_config:/root/.minio
+      - /opt/minio/data:/data
+      - /opt/minio/config:/root/.minio
     ports:
       - "9000:9000"
       - "9001:9001"
     command: server /data --console-address ":9001"
-
-volumes:
-  minio_data:
-  minio_config:

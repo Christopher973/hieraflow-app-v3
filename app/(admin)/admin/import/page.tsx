@@ -26,8 +26,10 @@ export default function ImportAdminPage() {
         </CardTitle>
 
         <CardDescription>
-          Visualiez, créer, modifier ou encore supprimer les Postes des
-          collaborateurs de l'organisation.
+          <p className="text-lg">
+            Visualiez, créer, modifier ou encore supprimer les Postes des
+            collaborateurs de l'organisation.
+          </p>
         </CardDescription>
       </CardHeader>
 

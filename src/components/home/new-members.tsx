@@ -35,9 +35,11 @@ export default async function NewMembers() {
           </h2>
         </CardTitle>
         <CardDescription>
-          L'équipe s'agrandit ! Retrouvez ici le positionnement hiérarchique et
-          le rôle stratégique des nouveaux collaborateurs au sein de
-          l'organisation.
+          <p className="text-lg">
+            L'équipe s'agrandit ! Retrouvez ici le positionnement hiérarchique
+            et le rôle stratégique des nouveaux collaborateurs au sein de
+            l'organisation.
+          </p>
         </CardDescription>
       </CardHeader>
 

@@ -19,9 +19,10 @@ type UseOrganigramResult = {
 
 export function useOrganigram(
   filters?: UseOrganigramFilters,
+  enabled = true,
 ): UseOrganigramResult {
   const [data, setData] = useState<OrganigramPayload | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(enabled ? true : true);
   const [error, setError] = useState<string | null>(null);
 
   const departmentId = filters?.departmentId;
@@ -40,6 +41,8 @@ export function useOrganigram(
   );
 
   const refresh = useCallback(async () => {
+    if (!enabled) return;
+
     setLoading(true);
     setError(null);
 
@@ -54,7 +57,7 @@ export function useOrganigram(
 
     setData(result.response.data ?? null);
     setLoading(false);
-  }, [query]);
+  }, [query, enabled]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -62,7 +65,7 @@ export function useOrganigram(
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [refresh]);
+  }, [refresh, enabled]);
 
   return {
     data,

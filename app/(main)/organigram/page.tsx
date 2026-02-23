@@ -29,9 +29,11 @@ export default function OrganigramPage() {
           </CardTitle>
           <CardAction></CardAction>
           <CardDescription>
-            Visualisez et exportez en PDF ou PNG les hiérarchies de
-            l'organisation par département et service. Cliquez sur un membre
-            pour voir et exporter ses détails.
+            <p className="text-lg">
+              Visualisez et exportez en PDF ou PNG les hiérarchies de
+              l'organisation par département et service. Cliquez sur un membre
+              pour voir et exporter ses détails.
+            </p>
           </CardDescription>
         </CardHeader>
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import OrgChart from "@balkangraph/orgchart.js";
+import { useSearchParams } from "next/navigation";
 
 import { useOrganigram } from "@/src/hooks/use-organigram";
 import { useDepartments } from "@/src/hooks/use-departments";
@@ -181,9 +182,32 @@ const withTextOverflow = (
 export default function Organigram() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<OrgChart | null>(null);
-  const [departmentFilter, setDepartmentFilter] = useState<string>("");
+  const searchParams = useSearchParams();
+
+  // Initialisation des filtres à partir des query params (initial render)
+  const initialDepartment =
+    searchParams?.get("departmentId") ?? searchParams?.get("department") ?? "";
+  const initialRawSectors =
+    searchParams?.get("sectorIds") ??
+    searchParams?.get("sectorsId") ??
+    searchParams?.get("sectorId");
+  const initialPendingSectors = initialRawSectors
+    ? initialRawSectors
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : null;
+
+  const [departmentFilter, setDepartmentFilter] = useState<string>(
+    () => initialDepartment,
+  );
   const [sectorFilter, setSectorFilter] = useState<string[]>([]);
   const [layout, setLayout] = useState<LayoutKey>("treeRightOffset");
+  // Si un param `sectorIds` est fourni dans l'URL avant que la liste des
+  // services soit chargée, on le stocke ici en attente d'être résolu.
+  const [pendingSectorFromUrl, setPendingSectorFromUrl] = useState<
+    string[] | null
+  >(() => initialPendingSectors);
 
   const { items: departments } = useDepartments({ page: 1, pageSize: 50 });
   const [exportFormat, setExportFormat] = useState<string | null>(null);
@@ -205,22 +229,43 @@ export default function Organigram() {
     pageSize: 200,
   });
 
+  const sectorsList: OrganigramSectorDto[] = sectors ?? EMPTY_SECTORS;
+
+  // Résoudre les secteurs fournis dans l'URL une fois la liste chargée.
+  const resolvedSectorFilter = useMemo(() => {
+    if (!pendingSectorFromUrl || sectorsList.length === 0) return sectorFilter;
+
+    const availableIds = new Set(sectorsList.map((s) => String(s.id)));
+    const matched = pendingSectorFromUrl.filter((p) => availableIds.has(p));
+
+    return matched.length > 0 ? matched : pendingSectorFromUrl;
+  }, [pendingSectorFromUrl, sectorsList, sectorFilter]);
+
   const parsedSectorIds = useMemo(
     () =>
-      sectorFilter.map((value) => Number(value)).filter((value) => value > 0),
-    [sectorFilter],
+      resolvedSectorFilter
+        .map((value) => Number(value))
+        .filter((value) => value > 0),
+    [resolvedSectorFilter],
   );
 
-  const { data, loading, error } = useOrganigram({
-    departmentId: effectiveDepartmentFilter
-      ? Number(effectiveDepartmentFilter)
-      : undefined,
-    sectorIds: parsedSectorIds,
-  });
+  const organigramEnabled =
+    departments.length > 0 && Boolean(effectiveDepartmentFilter);
+
+  const { data, loading, error } = useOrganigram(
+    {
+      departmentId: effectiveDepartmentFilter
+        ? Number(effectiveDepartmentFilter)
+        : undefined,
+      sectorIds: parsedSectorIds,
+    },
+    organigramEnabled,
+  );
 
   // `departments` is used directly for rendering the Select; no wrapper needed
-  const sectorsList: OrganigramSectorDto[] = sectors ?? EMPTY_SECTORS;
   const nodes: OrganigramNodeDto[] = data?.nodes ?? EMPTY_NODES;
+
+  // `sectorsList` est disponible ci-dessous
 
   // const departmentNameById = useMemo(() => {
   //   const entries = departments.map(
@@ -549,7 +594,7 @@ export default function Organigram() {
             label: "Département",
             binding: "departementLabel",
           },
-          { type: "textbox", label: "Secteur", binding: "secteurLabel" },
+          { type: "textbox", label: "Service", binding: "secteurLabel" },
         ],
       },
       // assistant separation and tag template for assistant nodes
@@ -570,8 +615,12 @@ export default function Organigram() {
         },
       },
       tags: {
+        // Les postes de type 'assistant' utilisent le template "isla"
+        // 'isla' est un template prédéfini de Balkan adapté aux assistants
+        // (présentation plus compacte). Cela permet d'afficher un rendu
+        // différent sans toucher au reste des bindings.
         assistant: {
-          template: "ula",
+          template: "isla",
         },
         "spacious-text": {
           template: "ulaSpacious",
@@ -722,6 +771,7 @@ export default function Organigram() {
           onValueChange={(value) => {
             setDepartmentFilter(value);
             setSectorFilter([]);
+            setPendingSectorFromUrl(null);
           }}
         >
           <SelectTrigger className="w-full">
@@ -742,27 +792,32 @@ export default function Organigram() {
         {/* Filtre par service */}
         <Combobox
           multiple
-          value={sectorFilter}
-          onValueChange={(value) => setSectorFilter(value)}
+          value={resolvedSectorFilter}
+          onValueChange={(value) => {
+            setSectorFilter(value);
+            setPendingSectorFromUrl(null);
+          }}
         >
           <ComboboxChips className="w-full">
-            {sectorFilter.map((value) => (
+            {resolvedSectorFilter.map((value) => (
               <ComboboxChip key={value}>
                 {sectorNameById[Number(value)] ?? value}
               </ComboboxChip>
             ))}
             <ComboboxChipsInput
               placeholder={
-                sectorFilter.length === 0 ? "Sélectionner les secteurs" : ""
+                resolvedSectorFilter.length === 0
+                  ? "Sélectionner les services"
+                  : ""
               }
             />
           </ComboboxChips>
           <ComboboxContent>
             <ComboboxList>
               <ComboboxGroup>
-                <ComboboxLabel>Secteurs</ComboboxLabel>
+                <ComboboxLabel>Services</ComboboxLabel>
                 {sectorsForDepartment.length === 0 ? (
-                  <ComboboxEmpty>Aucun secteur</ComboboxEmpty>
+                  <ComboboxEmpty>Aucun service</ComboboxEmpty>
                 ) : (
                   sectorsForDepartment.map((sector) => (
                     <ComboboxItem key={sector.id} value={String(sector.id)}>
@@ -826,7 +881,7 @@ export default function Organigram() {
                 Chargement en cours...
               </EmptyTitle>
               <EmptyDescription>
-                Les hiérarchies du département et des secteurs sélectionnés sont
+                Les hiérarchies du département et des services sélectionnés sont
                 en cours de chargement. Cela peut prendre quelques instants,
                 merci de bien vouloir patienter.
               </EmptyDescription>
@@ -844,9 +899,9 @@ export default function Organigram() {
             <EmptyHeader>
               <EmptyTitle>Aucune donnée</EmptyTitle>
               <EmptyDescription>
-                Il semble que le département ou les secteurs sélectionner ne
+                Il semble que le département ou les services sélectionnés ne
                 contiennent aucun collaborateur. Essayer de sélectionner un
-                autre département ou secteur. Si le problème persiste.
+                autre département ou service. Si le problème persiste.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

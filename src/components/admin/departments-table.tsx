@@ -84,7 +84,7 @@ const columns: ColumnDef<DepartmentRow>[] = [
   },
   {
     accessorKey: "sectorsCount",
-    header: "Secteurs",
+    header: "Services",
     cell: ({ row }) => <span>{row.getValue("sectorsCount")}</span>,
   },
   {

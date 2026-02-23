@@ -137,7 +137,7 @@ export default function TrombinoscopePage() {
         },
         sector: {
           id: collaborator.sectorId ?? 0,
-          name: collaborator.sectorName ?? "Secteur non assigné",
+          name: collaborator.sectorName ?? "Service non assigné",
           departmentId: collaborator.departmentId ?? 0,
         },
         department: {
@@ -195,8 +195,10 @@ export default function TrombinoscopePage() {
         </CardTitle>
 
         <CardDescription>
-          Découvrez les visages de l'organisation à travers du trombinoscope
-          interactif.
+          <p className="text-lg">
+            Découvrez les visages de l'organisation à travers du trombinoscope
+            interactif.
+          </p>
         </CardDescription>
       </CardHeader>
 
@@ -282,7 +284,7 @@ export default function TrombinoscopePage() {
             </SelectContent>
           </Select>
 
-          {/* Par secteurs */}
+          {/* Par services */}
           <Select
             onValueChange={(value) => {
               setSectorFilter(value);
@@ -291,12 +293,12 @@ export default function TrombinoscopePage() {
             disabled={departmentFilter === "all" || !hasSectors}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filtre par secteur" />
+              <SelectValue placeholder="Filtre par services" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectLabel>Secteur</SelectLabel>
-                <SelectItem value="all">Tous les secteurs</SelectItem>
+                <SelectLabel>Services</SelectLabel>
+                <SelectItem value="all">Tous les services</SelectItem>
                 {sectorItems.map((sector) => (
                   <SelectItem key={sector.id} value={String(sector.id)}>
                     {sector.name}

@@ -110,7 +110,7 @@ const editPositionSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["sectorId"],
-        message: "Le secteur est obligatoire.",
+        message: "Le service est obligatoire.",
       });
     }
   });
@@ -235,6 +235,47 @@ export default function JobsTable() {
 
   const onSubmitEdit = async (data: EditPositionValues) => {
     if (!editDialog) return;
+    // Désaffecter l'occupant actuel si l'utilisateur a demandé que le poste
+    // soit vacant, ou si on va assigner un nouveau collaborateur différent.
+    const currentOccupant = collaborators.find(
+      (c) => c.positionId === editDialog.id,
+    );
+
+    if (data.assignedCollaboratorId === "none") {
+      if (currentOccupant) {
+        const unassigned = await updateCollaborator(currentOccupant.id, {
+          positionId: null,
+        });
+
+        if (!unassigned) {
+          showErrorToast({
+            title: "Désaffectation impossible",
+            description:
+              "Impossible de supprimer l'occupant actuel du poste. Réessayez plus tard.",
+          });
+          return;
+        }
+      }
+    }
+
+    if (data.assignedCollaboratorId !== "none") {
+      const targetId = Number(data.assignedCollaboratorId);
+
+      if (currentOccupant && currentOccupant.id !== targetId) {
+        const unassigned = await updateCollaborator(currentOccupant.id, {
+          positionId: null,
+        });
+
+        if (!unassigned) {
+          showErrorToast({
+            title: "Assignation impossible",
+            description:
+              "Impossible de désaffecter l'occupant actuel du poste. Réessayez plus tard.",
+          });
+          return;
+        }
+      }
+    }
 
     const result = await updatePosition(editDialog.id, {
       name: data.name,
@@ -255,13 +296,12 @@ export default function JobsTable() {
       return;
     }
 
+    // Si on doit assigner un collaborateur après la mise à jour
     if (data.assignedCollaboratorId !== "none") {
-      const assigned = await updateCollaborator(
-        Number(data.assignedCollaboratorId),
-        {
-          positionId: editDialog.id,
-        },
-      );
+      const targetId = Number(data.assignedCollaboratorId);
+      const assigned = await updateCollaborator(targetId, {
+        positionId: editDialog.id,
+      });
 
       if (!assigned) {
         showErrorToast({
@@ -374,12 +414,12 @@ export default function JobsTable() {
               placeholder={
                 departmentFilter === "all"
                   ? "Sélectionnez d'abord un département"
-                  : "Filtrer par secteur"
+                  : "Filtrer par service"
               }
             />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les secteurs</SelectItem>
+            <SelectItem value="all">Tous les services</SelectItem>
             {sectors.map((sector) => (
               <SelectItem key={sector.id} value={String(sector.id)}>
                 {sector.name}
@@ -441,7 +481,7 @@ export default function JobsTable() {
                   <TableHead>Nom</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Département</TableHead>
-                  <TableHead>Secteur</TableHead>
+                  <TableHead>Service</TableHead>
                   <TableHead>Occupant</TableHead>
                   <TableHead>Créé le</TableHead>
                   <TableHead>
@@ -456,7 +496,7 @@ export default function JobsTable() {
                     <TableCell>{positionTypeLabels[position.type]}</TableCell>
                     <TableCell>{position.departmentName}</TableCell>
                     <TableCell>
-                      {position.sectorName || "Tous les secteurs"}
+                      {position.sectorName || "Tous les services"}
                     </TableCell>
                     <TableCell>{position.memberName ?? "Vacant"}</TableCell>
                     <TableCell>
@@ -626,7 +666,7 @@ export default function JobsTable() {
               </div>
 
               <div className="space-y-2">
-                <Label>Secteur</Label>
+                <Label>Service</Label>
                 <Controller
                   control={form.control}
                   name="sectorId"
@@ -642,7 +682,7 @@ export default function JobsTable() {
                             isDepartmentDirector
                               ? "Non applicable pour un directeur"
                               : editDepartmentId
-                                ? "Sélectionner un secteur"
+                                ? "Sélectionner un service"
                                 : "Sélectionnez d'abord un département"
                           }
                         />

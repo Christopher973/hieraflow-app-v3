@@ -34,7 +34,9 @@ export default async function MyAccountPage() {
         </CardTitle>
 
         <CardDescription>
-          Gérez et modifier les informations de votre compte.
+          <p className="text-lg">
+            Gérez et modifier les informations de votre compte.
+          </p>
         </CardDescription>
       </CardHeader>
 

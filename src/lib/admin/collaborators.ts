@@ -1042,10 +1042,64 @@ export async function updateCollaborator(
     }
   }
 
-  const validatedAssignments =
-    assignmentPayload !== null
-      ? await validateAssignments(assignmentPayload, id)
-      : null;
+  let validatedAssignments = null as {
+    assignments: ValidatedAssignment[];
+    primaryPositionId: number | null;
+  } | null;
+
+  if (assignmentPayload !== null) {
+    try {
+      validatedAssignments = await validateAssignments(assignmentPayload, id);
+    } catch (err) {
+      const code = getPrismaErrorCode(err);
+
+      // Si la validation a échoué à cause d'un poste déjà occupé, on tente
+      // de libérer les occupants actuels des postes demandés puis on réessaie.
+      if (code === "P2002") {
+        // Récupérer les assignations existantes pour ces postes
+        const occupied = (await prismaClient.memberPositionAssignment.findMany({
+          where: {
+            positionId: { in: assignmentPayload.positionIds },
+            memberId: { not: id },
+          },
+          select: { memberId: true },
+        })) as Array<{ memberId: number }>;
+
+        const toUnassign = Array.from(new Set(occupied.map((o) => o.memberId)));
+
+        if (toUnassign.length > 0) {
+          await prismaClient.$transaction(async (tx) => {
+            // Supprimer les assignations pour ces membres
+            await tx.memberPositionAssignment.deleteMany({
+              where: { memberId: { in: toUnassign } },
+            });
+
+            // Réinitialiser leur position primaire
+            await Promise.all(
+              toUnassign.map((memberId) =>
+                tx.member.update({
+                  where: { id: memberId },
+                  data: { positionId: null },
+                  select: { id: true },
+                }),
+              ),
+            );
+          });
+
+          // Retenter la validation maintenant que les postes sont libérés
+          validatedAssignments = await validateAssignments(
+            assignmentPayload,
+            id,
+          );
+        } else {
+          // Pas d'occupant détecté, réémettre l'erreur initiale
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
+  }
 
   await prismaClient.$transaction(async (tx) => {
     if (Object.keys(data).length > 0) {

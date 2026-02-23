@@ -59,6 +59,12 @@ export default function CollaboratorPage() {
     (position) => position.isPrimary,
   );
 
+  // position cible pour la navigation vers l'organigramme :
+  // - le poste principal si présent
+  // - sinon le premier poste secondaire (non principal)
+  const targetPosition =
+    primaryPosition ?? occupiedPositions.find((p) => !p.isPrimary) ?? null;
+
   const manager = collaborator?.position?.parentPosition?.member ?? null;
   const teamMembers =
     collaborator?.position?.childPositions
@@ -153,6 +159,30 @@ export default function CollaboratorPage() {
                   }}
                   type="trombinoscope"
                 />
+
+                {targetPosition ? (
+                  <div className="flex gap-2 w-full mt-2">
+                    {targetPosition.departmentId ? (
+                      <Link
+                        href={`/organigram?departmentId=${targetPosition.departmentId}`}
+                        className="w-full"
+                      >
+                        <Button className="w-full">Voir le département</Button>
+                      </Link>
+                    ) : null}
+
+                    {targetPosition.sectorId ? (
+                      <Link
+                        href={`/organigram?sectorIds=${targetPosition.sectorId}`}
+                        className="w-full"
+                      >
+                        <Button className="w-full" variant="secondary">
+                          Voir le service
+                        </Button>
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex flex-col w-full gap-2">

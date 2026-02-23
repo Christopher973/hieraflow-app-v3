@@ -597,7 +597,7 @@ export function UploadFile() {
 
           {/* Bouton d'aide */}
           <AlertDialogTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full">
               <MessageCircleQuestionMark /> Besoin d'aide ?
             </Button>
           </AlertDialogTrigger>

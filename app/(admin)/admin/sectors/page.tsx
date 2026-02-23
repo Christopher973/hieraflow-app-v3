@@ -86,19 +86,21 @@ export default function SectorsAdminPage() {
       <CardHeader>
         <CardTitle>
           <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 text-primary">
-            Gestion des secteurs
+            Gestion des services
           </h2>
         </CardTitle>
 
         <CardDescription>
-          Visualiez, créer, modifier ou encore supprimer les secteurs des
-          départements de l'organisation.
+          <p className="text-lg">
+            Visualiez, créer, modifier ou encore supprimer les services des
+            départements de l'organisation.
+          </p>
         </CardDescription>
 
         <CardAction>
           <Button onClick={() => setOpen(true)}>
             <CirclePlus />
-            Créer un secteur
+            <span className="hidden md:block">Créer un service</span>
           </Button>
         </CardAction>
       </CardHeader>
@@ -111,7 +113,7 @@ export default function SectorsAdminPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              <span className="hidden md:block">Créer un secteur</span>
+              <span className="hidden md:block">Créer un service</span>
             </DialogTitle>
           </DialogHeader>
 

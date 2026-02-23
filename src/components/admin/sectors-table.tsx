@@ -284,7 +284,7 @@ export default function SectorsTable() {
                 aria-hidden
                 className="size-4 text-muted-foreground"
               />
-              <SearchFieldInput placeholder="Rechercher un secteur" />
+              <SearchFieldInput placeholder="Rechercher un service" />
               <SearchFieldClear>
                 <XIcon aria-hidden className="size-4" />
               </SearchFieldClear>
@@ -325,9 +325,9 @@ export default function SectorsTable() {
       ) : items.length === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
-            <EmptyTitle>Aucun secteur</EmptyTitle>
+            <EmptyTitle>Aucun service</EmptyTitle>
             <EmptyDescription>
-              Ajoutez un premier secteur pour commencer.
+              Ajoutez un premier service pour commencer.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -425,7 +425,7 @@ export default function SectorsTable() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifier le secteur</DialogTitle>
+            <DialogTitle>Modifier le service</DialogTitle>
           </DialogHeader>
 
           <form
@@ -507,7 +507,7 @@ export default function SectorsTable() {
 
           <p className="text-sm text-muted-foreground">
             Cette action est irréversible. Voulez-vous vraiment supprimer le
-            secteur <strong>{confirmDeleteDialog?.name}</strong> ?
+            service <strong>{confirmDeleteDialog?.name}</strong> ?
           </p>
 
           <div className="flex items-center justify-end gap-2 mt-4">

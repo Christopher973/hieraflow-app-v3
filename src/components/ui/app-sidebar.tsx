@@ -42,17 +42,18 @@ const data = {
           url: "/admin/departments",
         },
         {
-          title: "Secteurs",
+          title: "Services",
           url: "/admin/sectors",
-        },
-        {
-          title: "Postes",
-          url: "/admin/jobs",
         },
         {
           title: "Collaborateurs",
           url: "/admin/collaborators",
         },
+        {
+          title: "Postes",
+          url: "/admin/jobs",
+        },
+
         {
           title: "Import des données",
           url: "/admin/import",

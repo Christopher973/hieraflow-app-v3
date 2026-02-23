@@ -1,5 +1,4 @@
 "use client";
-
 import LocationsTable from "@/src/components/admin/locations-table";
 import {
   Card,
@@ -77,8 +76,10 @@ export default function LocationsAdminPage() {
         </CardTitle>
 
         <CardDescription>
-          Visualiez, créer, modifier ou encore supprimer les localisations de
-          l'organisation.
+          <p className="text-lg">
+            Visualiez, créer, modifier ou encore supprimer les localisations de
+            l'organisation.
+          </p>
         </CardDescription>
 
         <CardAction>
