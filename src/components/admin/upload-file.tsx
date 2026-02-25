@@ -129,6 +129,7 @@ const postImportWithProgress = (
 
 export function UploadFile() {
   const router = useRouter();
+
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
 

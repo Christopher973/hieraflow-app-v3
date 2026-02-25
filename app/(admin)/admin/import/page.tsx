@@ -40,10 +40,6 @@ export default function ImportAdminPage() {
               <Cloud />
             </EmptyMedia>
             <EmptyTitle>Importer les données</EmptyTitle>
-            {/* <EmptyDescription>
-              Sélectionnez un fichier CSV pour importer les données RH de
-              l'organisation.
-            </EmptyDescription> */}
           </EmptyHeader>
           <EmptyContent>
             <UploadFile />
