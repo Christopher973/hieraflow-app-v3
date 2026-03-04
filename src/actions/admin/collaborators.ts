@@ -145,6 +145,39 @@ export async function createCollaboratorAction(
         });
       }
 
+      if (
+        errorMessage.includes("memberId_sectorId") ||
+        errorMessage.includes("memberId,sectorId")
+      ) {
+        return buildApiPayload<CollaboratorMutationPayload>({
+          errors: [
+            {
+              code: "CONFLICT",
+              source: "positionIds",
+              detail:
+                "Un collaborateur ne peut pas occuper deux postes dans le même secteur.",
+            },
+          ],
+          message: "Conflit",
+        });
+      }
+
+      if (
+        errorMessage.includes("memberId_positionId") ||
+        errorMessage.includes("memberId,positionId")
+      ) {
+        return buildApiPayload<CollaboratorMutationPayload>({
+          errors: [
+            {
+              code: "CONFLICT",
+              source: "positionIds",
+              detail: "Le collaborateur est déjà assigné à ce poste.",
+            },
+          ],
+          message: "Conflit",
+        });
+      }
+
       if (errorMessage.includes("serviceCode")) {
         return buildApiPayload<CollaboratorMutationPayload>({
           errors: [
@@ -189,7 +222,9 @@ export async function createCollaboratorAction(
         errors: [
           {
             code: "CONFLICT",
-            detail: "Un collaborateur avec ces informations existe déjà.",
+            source: "positionIds",
+            detail:
+              "Conflit d'assignation du collaborateur sur ce poste. Vérifiez le secteur et les affectations existantes.",
           },
         ],
         message: "Conflit",

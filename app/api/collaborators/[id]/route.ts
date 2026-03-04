@@ -136,6 +136,26 @@ export async function PATCH(request: NextRequest, context: RouteParams) {
         );
       }
 
+      if (
+        errorMessage.includes("memberId_sectorId") ||
+        errorMessage.includes("memberId,sectorId")
+      ) {
+        return conflict(
+          "Un collaborateur ne peut pas occuper deux postes dans le même secteur.",
+          "positionIds",
+        );
+      }
+
+      if (
+        errorMessage.includes("memberId_positionId") ||
+        errorMessage.includes("memberId,positionId")
+      ) {
+        return conflict(
+          "Le collaborateur est déjà assigné à ce poste.",
+          "positionIds",
+        );
+      }
+
       if (errorMessage.includes("serviceCode")) {
         return conflict(
           "Un collaborateur avec ce matricule existe déjà.",
@@ -157,7 +177,10 @@ export async function PATCH(request: NextRequest, context: RouteParams) {
         );
       }
 
-      return conflict("Un collaborateur avec ces informations existe déjà.");
+      return conflict(
+        "Conflit d'assignation du collaborateur sur ce poste. Vérifiez le secteur et les affectations existantes.",
+        "positionIds",
+      );
     }
 
     if (code === "P2003") {

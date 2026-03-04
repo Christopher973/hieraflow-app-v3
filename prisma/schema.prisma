@@ -280,7 +280,6 @@ model Member {
 /// Affectation d'un membre à un poste.
 /// Contraintes métier :
 /// - un poste ne peut être occupé que par un seul membre (unique positionId)
-/// - un membre ne peut pas avoir deux postes dans le même secteur (unique memberId+sectorId)
 /// - le poste principal est géré par `isPrimary` (contrainte applicative)
 model MemberPositionAssignment {
   id Int @id @default(autoincrement())
@@ -300,7 +299,6 @@ model MemberPositionAssignment {
   updatedAt  DateTime @updatedAt
 
   @@unique([memberId, positionId])
-  @@unique([memberId, sectorId])
   @@index([memberId])
   @@index([sectorId])
   @@index([isPrimary])

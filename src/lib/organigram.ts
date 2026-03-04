@@ -62,6 +62,26 @@ type PositionModelDelegate = {
           name: string;
         } | null;
       } | null;
+      memberAssignments?: Array<{
+        member: {
+          id: number;
+          serviceCode: string;
+          firstname: string;
+          lastname: string;
+          gender: "HOMME" | "FEMME" | "AUTRE";
+          birthday: Date | null;
+          isReferentRH: boolean;
+          professionalEmail: string;
+          phone: string | null;
+          startDate: Date;
+          endDate: Date | null;
+          avatarKey: string | null;
+          avatarUrl: string | null;
+          location: {
+            name: string;
+          } | null;
+        };
+      }>;
     }>
   >;
 };
@@ -260,6 +280,33 @@ export async function getOrganigramData(
           },
         },
       },
+      memberAssignments: {
+        take: 1,
+        select: {
+          member: {
+            select: {
+              id: true,
+              serviceCode: true,
+              firstname: true,
+              lastname: true,
+              gender: true,
+              birthday: true,
+              isReferentRH: true,
+              professionalEmail: true,
+              phone: true,
+              startDate: true,
+              endDate: true,
+              avatarKey: true,
+              avatarUrl: true,
+              location: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
     };
 
     if (hasDepartmentScope) {
@@ -299,7 +346,8 @@ export async function getOrganigramData(
             .department ?? null;
         const isDepartmentDirector = position.type === "DIRECTEUR";
 
-        const member = position.member;
+        const member =
+          position.memberAssignments?.[0]?.member ?? position.member ?? null;
         const memberAvatarUrl = member
           ? await resolveAvatarUrl(member.avatarKey, member.avatarUrl)
           : null;
@@ -391,25 +439,27 @@ export async function getOrganigramData(
       s.name AS sectorName,
       COALESCE(p.departmentId, s.departmentId) AS departmentId,
       d.name AS departmentName,
-      m.id AS memberId,
-      m.serviceCode,
-      m.firstname,
-      m.lastname,
-      m.gender,
-      m.birthday,
-      m.isReferentRH,
-      m.professionalEmail,
-      m.phone,
-      m.startDate,
-      m.endDate,
-      m.avatarKey,
-      m.avatarUrl,
+      COALESCE(ma.id, ml.id) AS memberId,
+      COALESCE(ma.serviceCode, ml.serviceCode) AS serviceCode,
+      COALESCE(ma.firstname, ml.firstname) AS firstname,
+      COALESCE(ma.lastname, ml.lastname) AS lastname,
+      COALESCE(ma.gender, ml.gender) AS gender,
+      COALESCE(ma.birthday, ml.birthday) AS birthday,
+      COALESCE(ma.isReferentRH, ml.isReferentRH) AS isReferentRH,
+      COALESCE(ma.professionalEmail, ml.professionalEmail) AS professionalEmail,
+      COALESCE(ma.phone, ml.phone) AS phone,
+      COALESCE(ma.startDate, ml.startDate) AS startDate,
+      COALESCE(ma.endDate, ml.endDate) AS endDate,
+      COALESCE(ma.avatarKey, ml.avatarKey) AS avatarKey,
+      COALESCE(ma.avatarUrl, ml.avatarUrl) AS avatarUrl,
       l.name AS locationName
     FROM \`position\` p
     LEFT JOIN sector s ON s.id = p.sectorId
     INNER JOIN department d ON d.id = COALESCE(p.departmentId, s.departmentId)
-    LEFT JOIN member m ON m.positionId = p.id
-    LEFT JOIN location l ON l.id = m.locationId
+    LEFT JOIN member_position_assignment mpa ON mpa.positionId = p.id
+    LEFT JOIN member ma ON ma.id = mpa.memberId
+    LEFT JOIN member ml ON ml.positionId = p.id
+    LEFT JOIN location l ON l.id = COALESCE(ma.locationId, ml.locationId)
     ${departmentFilterClause}
     ORDER BY p.id ASC`,
     ...departmentFilterParams,

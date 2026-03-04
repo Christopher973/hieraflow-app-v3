@@ -39,7 +39,15 @@ import { useDepartments } from "@/src/hooks/use-departments";
 import { usePositions } from "@/src/hooks/use-positions";
 import { useSectors } from "@/src/hooks/use-sectors";
 import type { PositionType } from "@/src/types/position";
-import { emitAdminDataRefresh } from "@/src/lib/admin-data-refresh";
+import {
+  ADMIN_DATA_REFRESH_EVENT,
+  emitAdminDataRefresh,
+  isAdminEntityRefreshEvent,
+} from "@/src/lib/admin-data-refresh";
+import {
+  buildNextCollaboratorAssignmentPayload,
+  fetchCollaboratorPositionAssignmentState,
+} from "@/src/lib/collaborator-position-assignments";
 import { showErrorToast } from "@/src/lib/show-error-toast";
 import { CirclePlus } from "lucide-react";
 
@@ -78,7 +86,7 @@ const createPositionFormSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["sectorId"],
-        message: "Le service=  est obligatoire.",
+        message: "Le service est obligatoire.",
       });
     }
   });
@@ -97,8 +105,21 @@ export default function JobsAdminPage() {
   const [selectedPositionType, setSelectedPositionType] =
     useState<CreatePositionType>("COLLABORATEUR");
 
-  const { createPosition, error: positionsError } = usePositions();
-  const { updateCollaborator, error: collaboratorsError } = useCollaborators();
+  const {
+    items: positions,
+    createPosition,
+    refresh: refreshPositions,
+    error: positionsError,
+  } = usePositions({ page: 1, pageSize: 100 });
+  const {
+    items: collaborators,
+    updateCollaborator,
+    refresh: refreshCollaborators,
+    error: collaboratorsError,
+  } = useCollaborators({
+    page: 1,
+    pageSize: 200,
+  });
   const { items: departments } = useDepartments({ page: 1, pageSize: 50 });
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
   const { items: sectors } = useSectors({
@@ -107,11 +128,6 @@ export default function JobsAdminPage() {
     departmentId: selectedDepartmentId
       ? Number(selectedDepartmentId)
       : undefined,
-  });
-  const { items: positions } = usePositions({ page: 1, pageSize: 100 });
-  const { items: collaborators } = useCollaborators({
-    page: 1,
-    pageSize: 50,
   });
 
   const availableParentPositions = useMemo(() => positions, [positions]);
@@ -138,6 +154,31 @@ export default function JobsAdminPage() {
 
   const isDepartmentDirector = selectedPositionType === "DIRECTEUR";
 
+  const assignCollaboratorToPosition = async (
+    collaboratorId: number,
+    targetPositionId: number,
+    asPrimary: boolean,
+  ) => {
+    const state = await fetchCollaboratorPositionAssignmentState(
+      collaboratorId,
+    );
+
+    if (!state) {
+      return false;
+    }
+
+    const nextAssignments = buildNextCollaboratorAssignmentPayload({
+      state,
+      targetPositionId,
+      asPrimary,
+    });
+
+    return updateCollaborator(collaboratorId, {
+      positionIds: nextAssignments.positionIds,
+      primaryPositionId: nextAssignments.primaryPositionId,
+    });
+  };
+
   const onSubmit = async (data: CreatePositionFormValues) => {
     const created = await createPosition({
       name: data.name,
@@ -159,11 +200,10 @@ export default function JobsAdminPage() {
     }
 
     if (data.assignedCollaboratorId !== "none") {
-      const assigned = await updateCollaborator(
+      const assigned = await assignCollaboratorToPosition(
         Number(data.assignedCollaboratorId),
-        {
-          positionId: created.data.id,
-        },
+        created.data.id,
+        data.isPrimary === "primary",
       );
 
       if (!assigned) {
@@ -200,6 +240,25 @@ export default function JobsAdminPage() {
       description: collaboratorsError,
     });
   }, [collaboratorsError]);
+
+  useEffect(() => {
+    const onRefresh = (event: Event) => {
+      if (isAdminEntityRefreshEvent(event, "positions")) {
+        void refreshPositions();
+        return;
+      }
+
+      if (isAdminEntityRefreshEvent(event, "collaborators")) {
+        void refreshCollaborators();
+      }
+    };
+
+    window.addEventListener(ADMIN_DATA_REFRESH_EVENT, onRefresh);
+
+    return () => {
+      window.removeEventListener(ADMIN_DATA_REFRESH_EVENT, onRefresh);
+    };
+  }, [refreshPositions, refreshCollaborators]);
 
   return (
     <Card>
@@ -388,27 +447,27 @@ export default function JobsAdminPage() {
                   )}
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label>Nature du poste</Label>
-                <Controller
-                  control={form.control}
-                  name="isPrimary"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Sélectionner la nature du poste" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="primary">Poste principal</SelectItem>
-                        <SelectItem value="secondary">
-                          Poste secondaire
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Nature du poste</Label>
+              <Controller
+                control={form.control}
+                name="isPrimary"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sélectionner la nature du poste" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="primary">Poste principal</SelectItem>
+                      <SelectItem value="secondary">
+                        Poste secondaire
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
 
             <div className="space-y-2">
