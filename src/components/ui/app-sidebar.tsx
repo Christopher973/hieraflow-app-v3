@@ -69,14 +69,14 @@ const data = {
       icon: House,
     },
     {
-      name: "Trombinoscope",
-      url: "/trombinoscope",
-      icon: Contact,
-    },
-    {
       name: "Organigramme",
       url: "/organigram",
       icon: ChartNetwork,
+    },
+    {
+      name: "Annuaire",
+      url: "/trombinoscope",
+      icon: Contact,
     },
   ],
 };
