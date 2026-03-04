@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import OrgChart from "@balkangraph/orgchart.js";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 import { useOrganigram } from "@/src/hooks/use-organigram";
 import { useDepartments } from "@/src/hooks/use-departments";
 import { useSectors } from "@/src/hooks/use-sectors";
+import { showErrorToast } from "@/src/lib/show-error-toast";
 import { getNameFallback } from "@/src/lib/utils";
 import type {
   OrganigramNodeDto,
@@ -26,6 +28,14 @@ interface OrgChartWithExport {
   config?: {
     layout?: number;
   };
+}
+
+interface OrgChartWithSearchUI extends OrgChartWithExport {
+  searchUI?: {
+    searchFieldsAbbreviation?: Record<string, string>;
+    helpView?: () => string;
+  };
+  shareProfile?: (id: string | number) => void;
 }
 
 interface WindowWithChart extends Window {
@@ -88,7 +98,9 @@ interface OrgNode {
   avatarUrl?: string;
   detailsUrl?: string;
   avatar?: string;
-  nomPrenom?: string;
+  nom?: string;
+  prenom?: string;
+  nomComplet?: string;
   codeAssignation?: string;
   genreLabel?: string;
   dateNaissanceLabel?: string;
@@ -98,7 +110,7 @@ interface OrgNode {
   localisationLabel?: string;
   dateEntreeLabel?: string;
   dateFinLabel?: string;
-  posteOccupeLabel?: string;
+  fonction?: string;
   departementLabel?: string;
   secteurLabel?: string;
   referentRHBadge?: string;
@@ -107,6 +119,11 @@ interface OrgNode {
 const EMPTY_SECTORS: OrganigramSectorDto[] = [];
 const EMPTY_NODES: OrganigramNodeDto[] = [];
 const VACANT_IMAGE_PATH = "/images/poste-vacant.png";
+const SEARCH_FIELD_LABELS: Record<string, string> = {
+  nom: "Nom",
+  prenom: "Prénom",
+  fonction: "Fonction",
+};
 
 type LayoutKey =
   | "treeRightOffset"
@@ -182,6 +199,7 @@ const withTextOverflow = (
 export default function Organigram() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<OrgChart | null>(null);
+  const chartNodesByIdRef = useRef<Map<number, OrgNode>>(new Map());
   const searchParams = useSearchParams();
 
   // Initialisation des filtres à partir des query params (initial render)
@@ -308,10 +326,12 @@ export default function Organigram() {
       return {
         ...node,
         detailsUrl: node.memberId
-          ? `./collaborator/${node.memberId}`
+          ? `/collaborator/${node.memberId}`
           : undefined,
         avatar,
-        nomPrenom: fullName,
+        nom: node.lastname ?? "",
+        prenom: node.firstname ?? "",
+        nomComplet: fullName,
         codeAssignation: isVacant
           ? "Poste vacant"
           : (node.serviceCode ?? "Non renseigné"),
@@ -333,7 +353,7 @@ export default function Organigram() {
           ? "Non applicable"
           : formatDateFr(node.startDate),
         dateFinLabel: node.endDate ? formatDateFr(node.endDate) : "Non définie",
-        posteOccupeLabel: node.title ?? "Non renseigné",
+        fonction: node.title ?? "Non renseigné",
         departementLabel: node.department,
         secteurLabel: node.sector,
         referentRHBadge: !isVacant && node.isReferentRH ? "Référent RH" : "",
@@ -353,6 +373,10 @@ export default function Organigram() {
     () => new Map(chartNodes.map((node) => [node.id, node])),
     [chartNodes],
   );
+
+  useEffect(() => {
+    chartNodesByIdRef.current = chartNodesById;
+  }, [chartNodesById]);
 
   const emptyState = !loading && chartNodes.length === 0;
 
@@ -384,29 +408,87 @@ export default function Organigram() {
 
   const handleMailTo = useCallback(
     (nodeId: number) => {
-      const node = chartNodesById.get(nodeId);
+      const node = chartNodesByIdRef.current.get(nodeId);
       if (!node?.professionalEmail) return;
       window.open(`mailto:${node.professionalEmail}`, "_self");
     },
-    [chartNodesById],
+    [],
   );
 
   const handleCallTo = useCallback(
     (nodeId: number) => {
-      const node = chartNodesById.get(nodeId);
+      const node = chartNodesByIdRef.current.get(nodeId);
       if (!node?.phone) return;
       window.open(`tel:${node.phone}`, "_self");
     },
-    [chartNodesById],
+    [],
   );
 
   const handleOpenDetailsPage = useCallback(
     (nodeId: number) => {
-      const node = chartNodesById.get(nodeId);
+      const node = chartNodesByIdRef.current.get(nodeId);
       if (!node?.detailsUrl) return;
       window.open(node.detailsUrl, "_self");
     },
-    [chartNodesById],
+    [],
+  );
+
+  const handleShareCollaborator = useCallback(
+    async (nodeId: number) => {
+      const node = chartNodesByIdRef.current.get(nodeId);
+
+      if (!node?.memberId) {
+        showErrorToast({
+          description: "Ce poste n'est pas associé à un collaborateur.",
+        });
+        return;
+      }
+
+      const shareUrl = new URL(
+        `/collaborator/${node.memberId}`,
+        window.location.origin,
+      ).toString();
+
+      try {
+        if (typeof navigator.share === "function") {
+          await navigator.share({ url: shareUrl });
+          return;
+        }
+
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+          toast.success("Lien du collaborateur copié dans le presse-papiers.");
+          return;
+        }
+
+        showErrorToast({
+          description:
+            "Le partage natif n'est pas disponible sur ce navigateur.",
+        });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (navigator.clipboard?.writeText) {
+          try {
+            await navigator.clipboard.writeText(shareUrl);
+            toast.success(
+              "Partage indisponible, lien copié dans le presse-papiers.",
+            );
+            return;
+          } catch {
+            // continue to error toast
+          }
+        }
+
+        showErrorToast({
+          description:
+            "Impossible de partager ce lien pour le moment. Réessayez.",
+        });
+      }
+    },
+    [],
   );
 
   useEffect(() => {
@@ -544,13 +626,19 @@ export default function Organigram() {
         zoom_out: { title: "Zoom arrière" },
         fit: { title: "Réinitialiser le zoom" },
       },
+      searchFields: ["nom", "prenom", "fonction"],
+      searchFieldsAbbreviation: {
+        nom: "nom",
+        prenom: "prenom",
+        fonction: "fonction",
+      },
       editForm: {
         readOnly: true,
-        titleBinding: "nomPrenom",
+        titleBinding: "nomComplet",
         photoBinding: "avatar",
         generateElementsFromFields: false,
         elements: [
-          { type: "textbox", label: "Nom et prénom", binding: "nomPrenom" },
+          { type: "textbox", label: "Nom complet", binding: "nomComplet" },
           {
             type: "textbox",
             label: "Code d'assignation",
@@ -586,8 +674,8 @@ export default function Organigram() {
           { type: "textbox", label: "Date de fin", binding: "dateFinLabel" },
           {
             type: "textbox",
-            label: "Poste occupé",
-            binding: "posteOccupeLabel",
+            label: "Fonction",
+            binding: "fonction",
           },
           {
             type: "textbox",
@@ -636,12 +724,49 @@ export default function Organigram() {
       },
       nodes: [],
       nodeBinding: {
-        field_0: "nomPrenom",
-        field_1: "posteOccupeLabel",
+        field_0: "nomComplet",
+        field_1: "fonction",
         field_2: "referentRHBadge",
         img_0: "avatar",
       },
     });
+
+    const chartWithSearchUI =
+      chartRef.current as unknown as OrgChartWithSearchUI;
+    const searchUI = chartWithSearchUI.searchUI;
+    if (searchUI) {
+      // L'aide `?` de Balkan affiche par défaut "abbreviation + field".
+      // On la simplifie pour n'afficher qu'un seul libellé par ligne.
+      searchUI.helpView = () => {
+        const abbreviations = searchUI.searchFieldsAbbreviation ?? {};
+        let html = '<table border="0" cellspacing="0" cellpadding="0">';
+
+        for (const abbreviation in abbreviations) {
+          const field = abbreviations[abbreviation];
+          const label =
+            SEARCH_FIELD_LABELS[field] ??
+            SEARCH_FIELD_LABELS[abbreviation] ??
+            field;
+
+          html += `<tr data-search-item-id="${abbreviation}" style="height: 50px;"><td class="boc-search-text-td">${label}</td></tr>`;
+        }
+
+        html += "</table>";
+        return html;
+      };
+    }
+
+    chartWithSearchUI.shareProfile = (id: string | number) => {
+      const nodeId = typeof id === "string" ? Number(id) : id;
+      if (Number.isNaN(nodeId)) {
+        showErrorToast({
+          description: "Impossible de déterminer le collaborateur à partager.",
+        });
+        return;
+      }
+
+      void handleShareCollaborator(nodeId);
+    };
 
     const chartInstance = chartRef.current as unknown as {
       nodeMenuUI?: {
@@ -659,7 +784,7 @@ export default function Organigram() {
     };
 
     chartInstance.nodeMenuUI?.on?.("show", (_sender, args) => {
-      const node = chartNodesById.get(args.nodeId);
+      const node = chartNodesByIdRef.current.get(args.nodeId);
 
       if (!node) return;
 
@@ -703,6 +828,7 @@ export default function Organigram() {
     handleMailTo,
     handleCallTo,
     handleOpenDetailsPage,
+    handleShareCollaborator,
   ]);
 
   // Assurer que le fond du DOM rendu par Balkan utilise la variable CSS
