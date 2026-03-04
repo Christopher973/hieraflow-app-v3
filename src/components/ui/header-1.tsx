@@ -23,12 +23,12 @@ export function Header({ isAdmin }: HeaderProps) {
       href: "/",
     },
     {
-      label: "Trombinoscope",
-      href: "/trombinoscope",
+      label: "Annuaire",
+      href: "/organigram",
     },
     {
-      label: "Organigramme",
-      href: "/organigram",
+      label: "Trombinoscope",
+      href: "/trombinoscope",
     },
   ];
 
