@@ -49,6 +49,8 @@ const CREATE_POSITION_TYPES = [
   "COLLABORATEUR",
 ] as const;
 
+const POSITION_PRIORITY_VALUES = ["primary", "secondary"] as const;
+
 type CreatePositionType = (typeof CREATE_POSITION_TYPES)[number];
 
 const createPositionFormSchema = z
@@ -65,6 +67,7 @@ const createPositionFormSchema = z
     sectorId: z.string().default(""),
     parentPositionId: z.string().default("none"),
     assignedCollaboratorId: z.string().default("none"),
+    isPrimary: z.enum(POSITION_PRIORITY_VALUES).default("secondary"),
     jobDetails: z
       .array(z.string().trim().min(1, "Un détail ne peut pas être vide."))
       .max(10, "Vous pouvez renseigner au maximum 10 détails.")
@@ -126,6 +129,7 @@ export default function JobsAdminPage() {
       sectorId: "",
       parentPositionId: "none",
       assignedCollaboratorId: "none",
+      isPrimary: "secondary",
       jobDetails: [],
     },
   });
@@ -138,7 +142,7 @@ export default function JobsAdminPage() {
     const created = await createPosition({
       name: data.name,
       type: data.type as PositionType,
-      isPrimary: false,
+      isPrimary: data.isPrimary === "primary",
       departmentId: Number(data.departmentId),
       sectorId: data.type === "DIRECTEUR" ? null : Number(data.sectorId),
       parentPositionId:
@@ -379,6 +383,27 @@ export default function JobsAdminPage() {
                             {collaborator.firstname} {collaborator.lastname}
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Nature du poste</Label>
+                <Controller
+                  control={form.control}
+                  name="isPrimary"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Sélectionner la nature du poste" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="primary">Poste principal</SelectItem>
+                        <SelectItem value="secondary">
+                          Poste secondaire
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   )}

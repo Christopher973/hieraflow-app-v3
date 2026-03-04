@@ -136,6 +136,7 @@ type CollaboratorDetailMember = {
         | "RESPONSABLE"
         | "COLLABORATEUR"
         | "ASSISTANT";
+      isPrimary: boolean;
       jobDetails: unknown;
       sectorId: number;
       sector: {
@@ -537,6 +538,7 @@ export async function getCollaboratorDetailById(
               id: true,
               name: true,
               type: true,
+              isPrimary: true,
               jobDetails: true,
               sectorId: true,
               sector: {
@@ -711,7 +713,7 @@ export async function getCollaboratorDetailById(
       sectorName: assignment.position.sector?.name ?? null,
       departmentId: assignment.position.sector?.departmentId ?? null,
       departmentName: assignment.position.sector?.department?.name ?? null,
-      isPrimary: assignment.isPrimary,
+      isPrimary: Boolean(assignment.position.isPrimary),
     })),
     position: member.position
       ? {
