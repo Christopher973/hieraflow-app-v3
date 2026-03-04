@@ -69,7 +69,14 @@ import {
   emitAdminDataRefresh,
   isAdminEntityRefreshEvent,
 } from "@/src/lib/admin-data-refresh";
+import { apiGet } from "@/src/lib/api-client";
+import {
+  buildCollaboratorUnassignmentPayload,
+  buildNextCollaboratorAssignmentPayload,
+  fetchCollaboratorPositionAssignmentState,
+} from "@/src/lib/collaborator-position-assignments";
 import { showErrorToast } from "@/src/lib/show-error-toast";
+import type { CollaboratorListPayload } from "@/src/types/collaborator";
 
 const FORM_POSITION_TYPES = [
   "DIRECTEUR",
@@ -161,7 +168,14 @@ export default function JobsTable() {
     deletePosition,
   } = usePositions(query);
 
-  const { updateCollaborator } = useCollaborators();
+  const {
+    items: collaborators,
+    updateCollaborator,
+    refresh: refreshCollaborators,
+  } = useCollaborators({
+    page: 1,
+    pageSize: 200,
+  });
   const { items: departments } = useDepartments({ page: 1, pageSize: 50 });
   const { items: sectors } = useSectors({
     departmentId:
@@ -169,10 +183,9 @@ export default function JobsTable() {
     page: 1,
     pageSize: 50,
   });
-  const { items: allPositions } = usePositions({ page: 1, pageSize: 100 });
-  const { items: collaborators } = useCollaborators({
+  const { items: allPositions, refresh: refreshAllPositions } = usePositions({
     page: 1,
-    pageSize: 50,
+    pageSize: 100,
   });
 
   const [editDepartmentId, setEditDepartmentId] = useState<string>("");
@@ -200,7 +213,63 @@ export default function JobsTable() {
 
   const isDepartmentDirector = selectedPositionType === "DIRECTEUR";
 
-  const openEditDialog = (position: PositionDto) => {
+  const resolvePositionOccupantId = async (positionId: number) => {
+    const result = await apiGet<CollaboratorListPayload>("/collaborators", {
+      positionId,
+      page: 1,
+      pageSize: 1,
+    });
+
+    if (result.error) {
+      return null;
+    }
+
+    return result.response.data?.items?.[0]?.id ?? null;
+  };
+
+  const removePositionFromCollaborator = async (
+    collaboratorId: number,
+    positionId: number,
+  ) => {
+    const state =
+      await fetchCollaboratorPositionAssignmentState(collaboratorId);
+
+    if (!state) return false;
+
+    const nextAssignments = buildCollaboratorUnassignmentPayload({
+      state,
+      positionIdToRemove: positionId,
+    });
+
+    return updateCollaborator(collaboratorId, {
+      positionIds: nextAssignments.positionIds,
+      primaryPositionId: nextAssignments.primaryPositionId,
+    });
+  };
+
+  const assignPositionToCollaborator = async (
+    collaboratorId: number,
+    targetPositionId: number,
+    asPrimary: boolean,
+  ) => {
+    const state =
+      await fetchCollaboratorPositionAssignmentState(collaboratorId);
+
+    if (!state) return false;
+
+    const nextAssignments = buildNextCollaboratorAssignmentPayload({
+      state,
+      targetPositionId,
+      asPrimary,
+    });
+
+    return updateCollaborator(collaboratorId, {
+      positionIds: nextAssignments.positionIds,
+      primaryPositionId: nextAssignments.primaryPositionId,
+    });
+  };
+
+  const openEditDialog = async (position: PositionDto) => {
     const relatedDepartment = departments.find(
       (department) => department.name === position.departmentName,
     );
@@ -208,9 +277,7 @@ export default function JobsTable() {
 
     setEditDepartmentId(departmentId);
 
-    const assigned = collaborators.find(
-      (collaborator) => collaborator.positionId === position.id,
-    );
+    const currentOccupantId = await resolvePositionOccupantId(position.id);
 
     form.reset({
       name: position.name,
@@ -230,7 +297,8 @@ export default function JobsTable() {
         position.parentPositionId === null
           ? "none"
           : String(position.parentPositionId),
-      assignedCollaboratorId: assigned ? String(assigned.id) : "none",
+      assignedCollaboratorId:
+        currentOccupantId !== null ? String(currentOccupantId) : "none",
       isPrimary: position.isPrimary ? "primary" : "secondary",
       jobDetails: position.jobDetails ?? [],
     });
@@ -240,47 +308,7 @@ export default function JobsTable() {
 
   const onSubmitEdit = async (data: EditPositionValues) => {
     if (!editDialog) return;
-    // Désaffecter l'occupant actuel si l'utilisateur a demandé que le poste
-    // soit vacant, ou si on va assigner un nouveau collaborateur différent.
-    const currentOccupant = collaborators.find(
-      (c) => c.positionId === editDialog.id,
-    );
-
-    if (data.assignedCollaboratorId === "none") {
-      if (currentOccupant) {
-        const unassigned = await updateCollaborator(currentOccupant.id, {
-          positionId: null,
-        });
-
-        if (!unassigned) {
-          showErrorToast({
-            title: "Désaffectation impossible",
-            description:
-              "Impossible de supprimer l'occupant actuel du poste. Réessayez plus tard.",
-          });
-          return;
-        }
-      }
-    }
-
-    if (data.assignedCollaboratorId !== "none") {
-      const targetId = Number(data.assignedCollaboratorId);
-
-      if (currentOccupant && currentOccupant.id !== targetId) {
-        const unassigned = await updateCollaborator(currentOccupant.id, {
-          positionId: null,
-        });
-
-        if (!unassigned) {
-          showErrorToast({
-            title: "Assignation impossible",
-            description:
-              "Impossible de désaffecter l'occupant actuel du poste. Réessayez plus tard.",
-          });
-          return;
-        }
-      }
-    }
+    const currentOccupantId = await resolvePositionOccupantId(editDialog.id);
 
     const result = await updatePosition(editDialog.id, {
       name: data.name,
@@ -293,7 +321,7 @@ export default function JobsTable() {
       jobDetails: data.jobDetails.length ? data.jobDetails : null,
     });
 
-    if (!result.success) {
+    if (!result.success || !result.data) {
       showErrorToast({
         title: "Mise à jour impossible",
         description: result.error ?? "Impossible de mettre à jour le poste.",
@@ -301,12 +329,45 @@ export default function JobsTable() {
       return;
     }
 
-    // Si on doit assigner un collaborateur après la mise à jour
-    if (data.assignedCollaboratorId !== "none") {
+    if (data.assignedCollaboratorId === "none") {
+      if (currentOccupantId !== null) {
+        const unassigned = await removePositionFromCollaborator(
+          currentOccupantId,
+          editDialog.id,
+        );
+
+        if (!unassigned) {
+          showErrorToast({
+            title: "Désaffectation partielle",
+            description:
+              "Le poste a été mis à jour mais la suppression de l'attribution au collaborateur a échoué.",
+          });
+        }
+      }
+    } else {
       const targetId = Number(data.assignedCollaboratorId);
-      const assigned = await updateCollaborator(targetId, {
-        positionId: editDialog.id,
-      });
+
+      if (currentOccupantId !== null && currentOccupantId !== targetId) {
+        const unassigned = await removePositionFromCollaborator(
+          currentOccupantId,
+          editDialog.id,
+        );
+
+        if (!unassigned) {
+          showErrorToast({
+            title: "Assignation impossible",
+            description:
+              "Impossible de libérer ce poste sur son occupant actuel.",
+          });
+          return;
+        }
+      }
+
+      const assigned = await assignPositionToCollaborator(
+        targetId,
+        result.data.id,
+        data.isPrimary === "primary",
+      );
 
       if (!assigned) {
         showErrorToast({
@@ -352,8 +413,15 @@ export default function JobsTable() {
 
   useEffect(() => {
     const onRefresh = (event: Event) => {
-      if (!isAdminEntityRefreshEvent(event, "positions")) return;
-      void refresh();
+      if (isAdminEntityRefreshEvent(event, "positions")) {
+        void refresh();
+        void refreshAllPositions();
+        return;
+      }
+
+      if (isAdminEntityRefreshEvent(event, "collaborators")) {
+        void refreshCollaborators();
+      }
     };
 
     window.addEventListener(ADMIN_DATA_REFRESH_EVENT, onRefresh);
@@ -361,7 +429,7 @@ export default function JobsTable() {
     return () => {
       window.removeEventListener(ADMIN_DATA_REFRESH_EVENT, onRefresh);
     };
-  }, [refresh]);
+  }, [refresh, refreshAllPositions, refreshCollaborators]);
 
   const totalPages = pagination?.totalPages ?? 1;
   const canGoPrevious = page > 1;
@@ -519,7 +587,9 @@ export default function JobsTable() {
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => openEditDialog(position)}
+                            onClick={() => {
+                              void openEditDialog(position);
+                            }}
                           >
                             Modifier
                           </DropdownMenuItem>
@@ -734,27 +804,27 @@ export default function JobsTable() {
                   )}
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label>Nature du poste</Label>
-                <Controller
-                  control={form.control}
-                  name="isPrimary"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Sélectionner la nature du poste" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="primary">Poste principal</SelectItem>
-                        <SelectItem value="secondary">
-                          Poste secondaire
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
+            <div className="space-y-2 w-full">
+              <Label>Nature du poste</Label>
+              <Controller
+                control={form.control}
+                name="isPrimary"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sélectionner la nature du poste" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="primary">Poste principal</SelectItem>
+                      <SelectItem value="secondary">
+                        Poste secondaire
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
 
             <div className="space-y-2">

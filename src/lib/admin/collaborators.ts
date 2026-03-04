@@ -382,7 +382,6 @@ const validateAssignments = async (
     throwPrismaLikeError("P2003", "primaryPositionId");
   }
 
-  const usedSectors = new Set<number>();
   const byId = new Map<number, { id: number; sectorId: number }>();
 
   // Normalize positions: resolve a concrete sectorId for positions that
@@ -421,12 +420,6 @@ const validateAssignments = async (
 
   for (const position of normalizedPositions) {
     byId.set(position.id, position);
-
-    if (usedSectors.has(position.sectorId)) {
-      throwPrismaLikeError("P2002", "member_sector_unique");
-    }
-
-    usedSectors.add(position.sectorId);
   }
 
   const occupied = (await prismaClient.memberPositionAssignment.findMany({
@@ -713,7 +706,7 @@ export async function getCollaboratorDetailById(
       sectorName: assignment.position.sector?.name ?? null,
       departmentId: assignment.position.sector?.departmentId ?? null,
       departmentName: assignment.position.sector?.department?.name ?? null,
-      isPrimary: Boolean(assignment.position.isPrimary),
+      isPrimary: Boolean(assignment.isPrimary),
     })),
     position: member.position
       ? {
