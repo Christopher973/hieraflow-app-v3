@@ -77,6 +77,8 @@ const FORM_POSITION_TYPES = [
   "COLLABORATEUR",
 ] as const;
 
+const POSITION_PRIORITY_VALUES = ["primary", "secondary"] as const;
+
 const positionTypeLabels: Record<PositionType, string> = {
   DIRECTEUR: "Directeur",
   SOUS_DIRECTEUR: "Sous-directeur",
@@ -100,6 +102,7 @@ const editPositionSchema = z
     sectorId: z.string().default(""),
     parentPositionId: z.string().default("none"),
     assignedCollaboratorId: z.string().default("none"),
+    isPrimary: z.enum(POSITION_PRIORITY_VALUES).default("secondary"),
     jobDetails: z
       .array(z.string().trim().min(1, "Un détail ne peut pas être vide."))
       .max(10, "Vous pouvez renseigner au maximum 10 détails.")
@@ -188,6 +191,7 @@ export default function JobsTable() {
       sectorId: "",
       parentPositionId: "none",
       assignedCollaboratorId: "none",
+      isPrimary: "secondary",
       jobDetails: [],
     },
   });
@@ -227,6 +231,7 @@ export default function JobsTable() {
           ? "none"
           : String(position.parentPositionId),
       assignedCollaboratorId: assigned ? String(assigned.id) : "none",
+      isPrimary: position.isPrimary ? "primary" : "secondary",
       jobDetails: position.jobDetails ?? [],
     });
 
@@ -280,11 +285,11 @@ export default function JobsTable() {
     const result = await updatePosition(editDialog.id, {
       name: data.name,
       type: data.type as PositionType,
+      isPrimary: data.isPrimary === "primary",
       departmentId: Number(data.departmentId),
       sectorId: data.type === "DIRECTEUR" ? null : Number(data.sectorId),
       parentPositionId:
         data.parentPositionId === "none" ? null : Number(data.parentPositionId),
-      isPrimary: false,
       jobDetails: data.jobDetails.length ? data.jobDetails : null,
     });
 
@@ -724,6 +729,27 @@ export default function JobsTable() {
                             {collaborator.firstname} {collaborator.lastname}
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Nature du poste</Label>
+                <Controller
+                  control={form.control}
+                  name="isPrimary"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Sélectionner la nature du poste" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="primary">Poste principal</SelectItem>
+                        <SelectItem value="secondary">
+                          Poste secondaire
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   )}

@@ -223,6 +223,7 @@ export default function CollaboratorPage() {
                                   <p className="truncate" title={position.name}>
                                     {position.name}
                                   </p>
+
                                   {position.isPrimary ? (
                                     <Badge>Poste principal</Badge>
                                   ) : (

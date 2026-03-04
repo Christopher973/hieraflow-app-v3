@@ -311,3 +311,9 @@ Fichier(s) fournis par l'intégrateur (à inclure dans `/opt/hieraflow`)
 - `.env.template` → renommer en `.env` et ajuster
 
 Fin de la fiche.
+
+Séquence courte:
+docker compose pull app
+docker compose run --rm app npx prisma migrate deploy
+docker compose up -d --no-deps --force-recreate app
+docker compose ps && docker compose logs --tail 100 app
