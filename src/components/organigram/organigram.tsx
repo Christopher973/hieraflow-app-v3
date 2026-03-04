@@ -202,7 +202,7 @@ export default function Organigram() {
     () => initialDepartment,
   );
   const [sectorFilter, setSectorFilter] = useState<string[]>([]);
-  const [layout, setLayout] = useState<LayoutKey>("treeRightOffset");
+  const [layout, setLayout] = useState<LayoutKey>("tree");
   // Si un param `sectorIds` est fourni dans l'URL avant que la liste des
   // services soit chargée, on le stocke ici en attente d'être résolu.
   const [pendingSectorFromUrl, setPendingSectorFromUrl] = useState<
