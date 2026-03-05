@@ -20,9 +20,10 @@ export interface CsvValidatedRow {
   secteur: string | null;
   poste: string | null;
   postePrincipale: boolean;
+  // Type hiérarchique du poste : directeur, assistant ou collaborateur (défaut).
+  typePoste: "DIRECTEUR" | "ASSISTANT" | "COLLABORATEUR";
   detailsPoste: string[];
   posteResponsable: string | null;
-  assistant: boolean;
 }
 
 // ─── Entités normalisées (prêtes pour Prisma) ────────────────────────────────
@@ -47,7 +48,7 @@ export interface ImportPosition {
   _tempId: string;
   name: string;
   isPrimary: boolean;
-  type: "COLLABORATEUR" | "ASSISTANT";
+  type: "DIRECTEUR" | "COLLABORATEUR" | "ASSISTANT";
   sectorRef: string;
   parentPositionRef: string | null;
   jobDetails: string[] | null;
@@ -68,6 +69,7 @@ export interface ImportMember {
   isReferentRH: boolean;
   locationRef: string;
   positionRefs: string[];
+  primaryPositionRef: string | null;
 }
 
 // ─── Payload, erreurs, résumé ────────────────────────────────────────────────

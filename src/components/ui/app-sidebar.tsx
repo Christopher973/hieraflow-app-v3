@@ -74,7 +74,7 @@ const data = {
       icon: ChartNetwork,
     },
     {
-      name: "Annuaire",
+      name: "Trombinoscope",
       url: "/trombinoscope",
       icon: Contact,
     },

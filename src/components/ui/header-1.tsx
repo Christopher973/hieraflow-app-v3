@@ -27,7 +27,7 @@ export function Header({ isAdmin }: HeaderProps) {
       href: "/organigram",
     },
     {
-      label: "Annuaire",
+      label: "Trombinoscope",
       href: "/trombinoscope",
     },
   ];

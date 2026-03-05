@@ -712,8 +712,10 @@ export function UploadFile() {
                     </li>
 
                     <li>
-                      <span className="font-semibold">assistant</span> (chaîne
-                      de caractères, valeurs possibles: "Oui", "Non")
+                      <span className="font-semibold">typePoste</span> (chaîne
+                      de caractères, valeurs possibles: "directeur",
+                      "assistant", "collaborateur" — valeur par défaut si vide
+                      ou invalide: "collaborateur")
                     </li>
                   </ul>
                 </div>

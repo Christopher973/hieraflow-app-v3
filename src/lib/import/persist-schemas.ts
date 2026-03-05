@@ -22,7 +22,7 @@ export const importPositionSchema = z.object({
   _tempId: tempIdSchema,
   name: z.string().trim().min(1).max(100),
   isPrimary: z.boolean().default(false),
-  type: z.enum(["COLLABORATEUR", "ASSISTANT"]),
+  type: z.enum(["DIRECTEUR", "COLLABORATEUR", "ASSISTANT"]),
   sectorRef: tempIdSchema,
   parentPositionRef: tempIdSchema.nullable(),
   jobDetails: z.array(z.string().trim().min(1)).nullable(),
@@ -45,6 +45,7 @@ export const importMemberSchema = z.object({
   isReferentRH: z.boolean().default(false),
   locationRef: tempIdSchema,
   positionRefs: z.array(tempIdSchema),
+  primaryPositionRef: tempIdSchema.nullable(),
 });
 
 export const importPayloadSchema = z.object({
