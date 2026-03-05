@@ -22,7 +22,7 @@ export const CSV_EXPECTED_HEADERS = [
   "postePrincipale",
   "detailsPoste",
   "posteResponsable",
-  "assistant",
+  "typePoste",
 ] as const;
 
 // ─── Helpers de validation ─────────────────────────────────────────────────────
@@ -117,7 +117,7 @@ export const csvRowSchema = z.object({
   postePrincipale: z.string(),
   detailsPoste: z.string(),
   posteResponsable: z.string(),
-  assistant: z.string(),
+  typePoste: z.string(),
 });
 
 export type CsvRawRow = z.infer<typeof csvRowSchema>;
@@ -244,6 +244,39 @@ export function validateAndTransformRow(
     });
   }
 
+  // ── Type de poste (directeur | assistant | collaborateur, défaut: collaborateur) ─
+  // Remplace l'ancien usage "principal"/"secondaire" qui était une erreur de
+  // conception : ce champ désigne le rôle hiérarchique du poste, pas le
+  // caractère principal/secondaire de l'affectation (géré par "postePrincipale").
+
+  const typePosteRaw = raw.typePoste.trim();
+  const typePosteLower = typePosteRaw.toLowerCase();
+  let typePoste: "DIRECTEUR" | "ASSISTANT" | "COLLABORATEUR" = "COLLABORATEUR";
+
+  if (typePosteLower === "directeur") {
+    typePoste = "DIRECTEUR";
+  } else if (typePosteLower === "assistant") {
+    typePoste = "ASSISTANT";
+  } else if (typePosteLower === "collaborateur" || typePosteLower === "") {
+    typePoste = "COLLABORATEUR";
+  } else {
+    // Rétrocompatibilité : les anciennes valeurs "principal"/"secondaire"
+    // étaient erronées dans ce champ. On les ignore et on applique le défaut.
+    if (typePosteLower === "principal" || typePosteLower === "secondaire") {
+      console.warn(
+        `[Import] Ligne ${lineNumber} : valeur obsolète "${typePosteRaw}" dans "typePoste". ` +
+        `Ce champ doit désormais contenir "directeur", "assistant" ou "collaborateur". ` +
+        `Valeur par défaut appliquée : "collaborateur".`,
+      );
+    } else {
+      console.warn(
+        `[Import] Ligne ${lineNumber} : valeur inconnue "${typePosteRaw}" dans "typePoste". ` +
+        `Valeur par défaut appliquée : "collaborateur".`,
+      );
+    }
+    typePoste = "COLLABORATEUR";
+  }
+
   // ── Arrêt si erreurs ───────────────────────────────────────────────
 
   if (errors.length > 0) {
@@ -271,9 +304,9 @@ export function validateAndTransformRow(
       secteur: emptyToNull(raw.secteur),
       poste: emptyToNull(raw.poste),
       postePrincipale: parseOuiNon(raw.postePrincipale),
+      typePoste,
       detailsPoste: parseDetailsList(raw.detailsPoste),
       posteResponsable: emptyToNull(raw.posteResponsable),
-      assistant: parseOuiNon(raw.assistant),
     },
   };
 }

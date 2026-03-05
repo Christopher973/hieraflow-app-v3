@@ -1,5 +1,6 @@
 import Papa from "papaparse";
 import {
+  CSV_EXPECTED_HEADERS,
   csvRowSchema,
   normalizeRawRow,
   validateAndTransformRow,
@@ -47,6 +48,21 @@ export function parseAndValidateCsv(file: File): Promise<ImportResult> {
           const allErrors: ImportError[] = [];
           const validatedRows: { row: CsvValidatedRow; lineNumber: number }[] =
             [];
+
+          const headers = (results.meta.fields ?? []).map((field) =>
+            (field ?? "").trim(),
+          );
+          const missingHeaders = CSV_EXPECTED_HEADERS.filter(
+            (expected) => !headers.includes(expected),
+          );
+
+          if (missingHeaders.length > 0) {
+            allErrors.push({
+              line: 1,
+              field: "header",
+              message: `Colonnes manquantes: ${missingHeaders.join(", ")}`,
+            });
+          }
 
           // ── Étape 1-4 : Validation ligne par ligne ─────────────────
 

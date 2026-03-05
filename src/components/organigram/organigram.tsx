@@ -406,90 +406,77 @@ export default function Organigram() {
     }
   }
 
-  const handleMailTo = useCallback(
-    (nodeId: number) => {
-      const node = chartNodesByIdRef.current.get(nodeId);
-      if (!node?.professionalEmail) return;
-      window.open(`mailto:${node.professionalEmail}`, "_self");
-    },
-    [],
-  );
+  const handleMailTo = useCallback((nodeId: number) => {
+    const node = chartNodesByIdRef.current.get(nodeId);
+    if (!node?.professionalEmail) return;
+    window.open(`mailto:${node.professionalEmail}`, "_self");
+  }, []);
 
-  const handleCallTo = useCallback(
-    (nodeId: number) => {
-      const node = chartNodesByIdRef.current.get(nodeId);
-      if (!node?.phone) return;
-      window.open(`tel:${node.phone}`, "_self");
-    },
-    [],
-  );
+  const handleCallTo = useCallback((nodeId: number) => {
+    const node = chartNodesByIdRef.current.get(nodeId);
+    if (!node?.phone) return;
+    window.open(`tel:${node.phone}`, "_self");
+  }, []);
 
-  const handleOpenDetailsPage = useCallback(
-    (nodeId: number) => {
-      const node = chartNodesByIdRef.current.get(nodeId);
-      if (!node?.detailsUrl) return;
-      window.open(node.detailsUrl, "_self");
-    },
-    [],
-  );
+  const handleOpenDetailsPage = useCallback((nodeId: number) => {
+    const node = chartNodesByIdRef.current.get(nodeId);
+    if (!node?.detailsUrl) return;
+    window.open(node.detailsUrl, "_self");
+  }, []);
 
-  const handleShareCollaborator = useCallback(
-    async (nodeId: number) => {
-      const node = chartNodesByIdRef.current.get(nodeId);
+  const handleShareCollaborator = useCallback(async (nodeId: number) => {
+    const node = chartNodesByIdRef.current.get(nodeId);
 
-      if (!node?.memberId) {
-        showErrorToast({
-          description: "Ce poste n'est pas associé à un collaborateur.",
-        });
+    if (!node?.memberId) {
+      showErrorToast({
+        description: "Ce poste n'est pas associé à un collaborateur.",
+      });
+      return;
+    }
+
+    const shareUrl = new URL(
+      `/collaborator/${node.memberId}`,
+      window.location.origin,
+    ).toString();
+
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ url: shareUrl });
         return;
       }
 
-      const shareUrl = new URL(
-        `/collaborator/${node.memberId}`,
-        window.location.origin,
-      ).toString();
-
-      try {
-        if (typeof navigator.share === "function") {
-          await navigator.share({ url: shareUrl });
-          return;
-        }
-
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(shareUrl);
-          toast.success("Lien du collaborateur copié dans le presse-papiers.");
-          return;
-        }
-
-        showErrorToast({
-          description:
-            "Le partage natif n'est pas disponible sur ce navigateur.",
-        });
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-
-        if (navigator.clipboard?.writeText) {
-          try {
-            await navigator.clipboard.writeText(shareUrl);
-            toast.success(
-              "Partage indisponible, lien copié dans le presse-papiers.",
-            );
-            return;
-          } catch {
-            // continue to error toast
-          }
-        }
-
-        showErrorToast({
-          description:
-            "Impossible de partager ce lien pour le moment. Réessayez.",
-        });
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Lien du collaborateur copié dans le presse-papiers.");
+        return;
       }
-    },
-    [],
-  );
+
+      showErrorToast({
+        description: "Le partage natif n'est pas disponible sur ce navigateur.",
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          toast.success(
+            "Partage indisponible, lien copié dans le presse-papiers.",
+          );
+          return;
+        } catch {
+          // continue to error toast
+        }
+      }
+
+      showErrorToast({
+        description:
+          "Impossible de partager ce lien pour le moment. Réessayez.",
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || chartRef.current || emptyState || loading)
@@ -603,6 +590,41 @@ export default function Organigram() {
       }
 
       templateRegistry.templates.ulaRh = ulaRhTemplate;
+      // Si le template 'olivia' existe, on lui ajoute la logique du badge
+      // Référent RH afin que les assistants puissent également afficher
+      // ce badge lorsque la donnée `referentRHBadge` est présente.
+      const oliviaTemplate = templateRegistry.templates.olivia as
+        | Record<string, unknown>
+        | undefined;
+
+      if (oliviaTemplate) {
+        const oliviaWithBadge: Record<string, unknown> = {
+          ...oliviaTemplate,
+        };
+
+        oliviaWithBadge.field_2 = function (
+          node: { w: number; h: number },
+          data: { referentRHBadge?: string },
+        ) {
+          if (!data?.referentRHBadge) return "";
+
+          const badgeWidth = 96;
+          const badgeHeight = 20;
+          const badgeX = (node.w - badgeWidth) / 2;
+          const badgeY = node.h - 30;
+          const textX = node.w / 2;
+          const textY = badgeY + 14;
+
+          return `
+            <g>
+              <rect x="${badgeX}" y="${badgeY}" width="${badgeWidth}" height="${badgeHeight}" rx="10" ry="10" fill="#3b82f6"></rect>
+              <text x="${textX}" y="${textY}" text-anchor="middle" fill="#ffffff" style="font-size:11px;font-weight:700;">${data.referentRHBadge}</text>
+            </g>
+          `;
+        };
+
+        templateRegistry.templates.olivia = oliviaWithBadge;
+      }
     }
 
     // Localisation du placeholder de recherche (en français)
@@ -614,6 +636,11 @@ export default function Organigram() {
       template: "ula",
       layout: LAYOUT_TO_ORGCHART[layout],
       nodeMouseClick: OrgChart.action.details,
+      // Activer Ctrl+Zoom : quand l'utilisateur maintient Ctrl et utilise la
+      // molette, on effectue un zoom plutôt que le défilement/navigation.
+      // Note: l'API du paquet utilise la propriété `mouseScrool` (orthographe
+      // historique). Utiliser exactement cette clé pour éviter l'erreur TS.
+      mouseScrool: OrgChart.action.ctrlZoom,
       toolbar: {
         layout: false,
         zoom: false,
@@ -703,12 +730,12 @@ export default function Organigram() {
         },
       },
       tags: {
-        // Les postes de type 'assistant' utilisent le template "isla"
-        // 'isla' est un template prédéfini de Balkan adapté aux assistants
-        // (présentation plus compacte). Cela permet d'afficher un rendu
-        // différent sans toucher au reste des bindings.
+        // Les postes de type 'assistant' utilisent le template "olivia"
+        // 'olivia' est un template prédéfini de Balkan adapté aux assistants
+        // (présentation compacte et adaptée aux assistants). Cela permet
+        // d'afficher un rendu différent sans toucher au reste des bindings.
         assistant: {
-          template: "isla",
+          template: "mery",
         },
         "spacious-text": {
           template: "ulaSpacious",

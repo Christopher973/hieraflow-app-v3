@@ -195,6 +195,24 @@ export const validateImportPayloadRefs = (
       }
     });
 
+    if (member.primaryPositionRef && !positionIds.has(member.primaryPositionRef)) {
+      issues.push({
+        path: ["payload", "members", index, "primaryPositionRef"],
+        message: "Référence de poste principal introuvable dans le payload.",
+      });
+    }
+
+    if (
+      member.primaryPositionRef &&
+      !member.positionRefs.includes(member.primaryPositionRef)
+    ) {
+      issues.push({
+        path: ["payload", "members", index, "primaryPositionRef"],
+        message:
+          "Le poste principal doit aussi être présent dans la liste des postes assignés.",
+      });
+    }
+
     if (member.endDate && member.endDate < member.startDate) {
       issues.push({
         path: ["payload", "members", index, "endDate"],
@@ -626,6 +644,14 @@ export async function persistImportPayload(
           .map((positionRef) => positionIdByTempId.get(positionRef))
           .filter((value): value is number => typeof value === "number");
 
+        const primaryPositionId = member.primaryPositionRef
+          ? (positionIdByTempId.get(member.primaryPositionRef) ?? null)
+          : null;
+        // Sécurité: si aucun principal explicite n'est défini, on conserve
+        // l'ancien comportement en prenant le premier poste assigné.
+        const resolvedPrimaryPositionId =
+          primaryPositionId ?? resolvedPositionIds[0] ?? null;
+
         return {
           serviceCode: member.serviceCode,
           firstname: member.firstname,
@@ -639,8 +665,9 @@ export async function persistImportPayload(
           endDate: member.endDate,
           isReferentRH: member.isReferentRH,
           locationId,
-          positionId: resolvedPositionIds[0] ?? null,
+          positionId: resolvedPrimaryPositionId,
           resolvedPositionIds,
+          primaryPositionId: resolvedPrimaryPositionId,
         };
       });
 
@@ -784,7 +811,7 @@ export async function persistImportPayload(
           continue;
         }
 
-        item.resolvedPositionIds.forEach((positionId, index) => {
+        item.resolvedPositionIds.forEach((positionId) => {
           const sectorId = positionSectorIdById.get(positionId);
 
           if (!sectorId) {
@@ -795,7 +822,9 @@ export async function persistImportPayload(
             memberId,
             positionId,
             sectorId,
-            isPrimary: index === 0,
+            isPrimary:
+              item.primaryPositionId !== null &&
+              positionId === item.primaryPositionId,
           });
         });
       }

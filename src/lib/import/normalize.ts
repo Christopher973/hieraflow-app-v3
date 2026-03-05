@@ -39,7 +39,7 @@ interface NormalizeResult {
  * - Member : unique par codeAssignation. Si doublon, la dernière occurrence
  *   écrase la précédente (données membre), et les positions s'accumulent.
  * - Email : unique entre membres différents.
- * - Un membre ne peut avoir qu'un seul poste principal.
+ * - Un membre ne peut avoir qu'un seul poste principal (`postePrincipale=oui`).
  */
 export function normalizeImportData(
   validatedRows: { row: CsvValidatedRow; lineNumber: number }[],
@@ -62,8 +62,8 @@ export function normalizeImportData(
   const memberMap = new Map<string, ImportMember>();
   /** email → codeAssignation du propriétaire */
   const emailOwnerMap = new Map<string, string>();
-  /** codeAssignation → Set<positionName en lowercase dans le même secteur> pour détecter les postes principaux multiples */
-  const memberPrimaryPositions = new Map<string, string | null>();
+  /** codeAssignation → référence du poste principal */
+  const memberPrimaryPositions = new Map<string, string>();
 
   // ── Suivi de la hiérarchie (pour résolution en 2e passe) ───────────
 
@@ -119,16 +119,32 @@ export function normalizeImportData(
     // ── Sector (optionnel, nécessite un département) ─────────────────
 
     let sector: ImportSector | null = null;
-    if (row.secteur && department) {
-      const sectorKey = `${department._tempId}|${row.secteur.toLowerCase()}`;
-      if (!sectorMap.has(sectorKey)) {
-        sectorMap.set(sectorKey, {
-          _tempId: nextTempId(),
-          name: row.secteur,
-          departmentRef: department._tempId,
-        });
+    if (department) {
+      if (row.secteur) {
+        const sectorKey = `${department._tempId}|${row.secteur.toLowerCase()}`;
+        if (!sectorMap.has(sectorKey)) {
+          sectorMap.set(sectorKey, {
+            _tempId: nextTempId(),
+            name: row.secteur,
+            departmentRef: department._tempId,
+          });
+        }
+        sector = sectorMap.get(sectorKey)!;
+      } else if (row.poste) {
+        // Quand un poste est défini sans secteur (ex: Directeur, Assistant au
+        // niveau du département), on crée un secteur racine implicite nommé
+        // d'après le département. Cela permet à ces postes d'exister dans le
+        // modèle de données sans être rattachés à un secteur métier spécifique.
+        const rootSectorKey = `${department._tempId}|__root__`;
+        if (!sectorMap.has(rootSectorKey)) {
+          sectorMap.set(rootSectorKey, {
+            _tempId: nextTempId(),
+            name: department.name,
+            departmentRef: department._tempId,
+          });
+        }
+        sector = sectorMap.get(rootSectorKey)!;
       }
-      sector = sectorMap.get(sectorKey)!;
     }
 
     // ── Position (optionnelle, nécessite un secteur) ─────────────────
@@ -141,7 +157,7 @@ export function normalizeImportData(
           _tempId: nextTempId(),
           name: row.poste,
           isPrimary: row.postePrincipale,
-          type: row.assistant ? "ASSISTANT" : "COLLABORATEUR",
+          type: row.typePoste,
           sectorRef: sector._tempId,
           parentPositionRef: null,
           jobDetails: row.detailsPoste.length > 0 ? row.detailsPoste : null,
@@ -150,7 +166,7 @@ export function normalizeImportData(
         // Mise à jour avec les données de la dernière occurrence
         const existing = positionMap.get(positionKey)!;
         existing.isPrimary = row.postePrincipale;
-        existing.type = row.assistant ? "ASSISTANT" : "COLLABORATEUR";
+        existing.type = row.typePoste;
         if (row.detailsPoste.length > 0) {
           existing.jobDetails = row.detailsPoste;
         }
@@ -169,6 +185,8 @@ export function normalizeImportData(
     }
 
     // ── Validation : un seul poste principal par membre ──────────────
+    // La colonne "postePrincipale" (oui/non) détermine l'affectation principale
+    // du membre. "typePoste" désigne maintenant le rôle hiérarchique du poste.
 
     if (position && row.postePrincipale) {
       const existingPrimary = memberPrimaryPositions.get(row.codeAssignation);
@@ -176,7 +194,7 @@ export function normalizeImportData(
         errors.push({
           line: lineNumber,
           field: "postePrincipale",
-          message: `Le membre "${row.codeAssignation}" a déjà un poste principal`,
+          message: `Le membre "${row.codeAssignation}" a déjà un poste principal. Passez "postePrincipale" à "non" sur les autres lignes.`,
         });
         continue;
       }
@@ -206,6 +224,10 @@ export function normalizeImportData(
       if (position && !existingMember.positionRefs.includes(position._tempId)) {
         existingMember.positionRefs.push(position._tempId);
       }
+
+      if (position && row.postePrincipale) {
+        existingMember.primaryPositionRef = position._tempId;
+      }
     } else {
       memberMap.set(row.codeAssignation, {
         _tempId: nextTempId(),
@@ -222,6 +244,8 @@ export function normalizeImportData(
         isReferentRH: row.referentRH,
         locationRef: location._tempId,
         positionRefs: position ? [position._tempId] : [],
+        primaryPositionRef:
+          position && row.postePrincipale ? position._tempId : null,
       });
     }
   }
@@ -234,10 +258,25 @@ export function normalizeImportData(
 
     if (!position) continue;
 
+    // 1. Chercher le parent dans le même secteur (cas nominal)
     let parentPosition = positionMap.get(parentKey);
 
     if (!parentPosition) {
-      // Créer un poste parent vacant s'il n'existe pas encore
+      // 2. Recherche globale par nom : le parent peut être dans un autre
+      //    secteur (ex: un Directeur sans secteur attribué crée un secteur
+      //    racine implicite différent du secteur de l'enfant).
+      const parentNameLower = parentName.toLowerCase();
+      for (const pos of positionMap.values()) {
+        if (pos.name.toLowerCase() === parentNameLower) {
+          parentPosition = pos;
+          break;
+        }
+      }
+    }
+
+    if (!parentPosition) {
+      // 3. Introuvable nulle part : créer un poste parent vacant dans le
+      //    même secteur en dernier recours.
       parentPosition = {
         _tempId: nextTempId(),
         name: parentName,
