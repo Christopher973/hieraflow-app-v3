@@ -50,4 +50,8 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# On installe le CLI prisma en local (très léger) pour éviter que npx le télécharge à chaque démarrage
+RUN npm install prisma --no-save
+
+# Le conteneur s'auto-migre, puis lance Next.js
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
