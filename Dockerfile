@@ -1,54 +1,69 @@
-# 1. Base Alpine (Ultra-légère) avec la version exacte pour Prisma
-FROM node:22.14.0-alpine AS base
-
-# Dépendances système pour Prisma (libc6-compat) et Sharp (vips-dev)
-RUN apk add --no-cache libc6-compat vips-dev build-base python3
-
-# 2. Installation des dépendances
-FROM base AS deps
+# Multi-stage Dockerfile for Next.js 16 (standalone) + Prisma 7
+# Builder: install deps, generate Prisma client, build Next.js
+FROM node:20-bullseye-slim AS builder
 WORKDIR /app
+
+# Install packages required to build native modules (sharp, prisma binaries)
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    python3 \
+    build-essential \
+    pkg-config \
+    libcairo2-dev \
+    libgif-dev \
+    libjpeg-dev \
+    libpango1.0-dev \
+    librsvg2-dev \
+    libvips-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies
 COPY package.json package-lock.json ./
-# SOLUTION ICI : --ignore-scripts empêche Prisma de se lancer prématurément
-RUN npm ci --ignore-scripts --no-audit --no-fund
+# Copy Prisma schema early so `prisma generate` (postinstall) can run during npm ci
+COPY prisma ./prisma
+RUN npm ci --no-audit --no-fund
 
-# 3. Phase de Build
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copy source
 COPY . .
 
-# Génération du client Prisma (Maintenant que le dossier /prisma est copié)
-RUN npx prisma generate
+# Generate Prisma client for production runtime
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
-# Build Next.js (Limitation stricte de la RAM)
+# Build Next.js (standalone output)
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS="--max-old-space-size=768"
 RUN npm run build
 
-# 4. Image de Production (Runner)
-FROM base AS runner
+######### Runtime image #########
+FROM node:20-bullseye-slim AS runner
 WORKDIR /app
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
-# Bridage mémoire au runtime
-ENV NODE_OPTIONS="--max-old-space-size=256"
+# Runtime libs required by sharp
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libvips-dev \
+  && rm -rf /var/lib/apt/lists/*
 
-# Sécurité : Création d'un utilisateur non-root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Create non-root user
+RUN groupadd -r app && useradd -r -g app app
 
-# On ne copie QUE ce qui est strictement nécessaire
+# Copy standalone build output and necessary files
+COPY --from=builder /app/.next/standalone/ ./
+COPY --from=builder /app/.next/static/ ./.next/static/
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-USER nextjs
+# Copy production node_modules built in the builder stage
+COPY --from=builder /app/node_modules ./node_modules
 
-EXPOSE 3001
-ENV PORT=3001
-ENV HOSTNAME="0.0.0.0"
+# Set permissions and user
+RUN chown -R app:app /app
+USER app
 
-# Le conteneur télécharge le CLI à la volée, s'auto-migre, puis lance Next.js
-CMD ["sh", "-c", "npx --yes prisma migrate deploy && node server.js"]
+ENV NODE_ENV=production
+ENV PORT=3000
+EXPOSE 3000
+
+# Entrypoint: Next standalone exposes a server.js at the root of the standalone folder
+CMD ["node", "server.js"]
